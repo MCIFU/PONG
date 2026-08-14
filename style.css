@@ -1,0 +1,1025 @@
+/* Estilo "arcade" para el Pong */
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, #14142b, #050508);
+  color: #f5f5f5;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+/* Pantalla de bienvenida (splash) de la PWA */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #0a0a0f;
+  color: #f5f5f5;
+  font-family: 'Courier New', Courier, monospace;
+  text-align: center;
+  transition: opacity 0.5s ease;
+}
+
+.splash.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  image-rendering: pixelated;
+  animation: splash-bounce 0.7s cubic-bezier(0.28, 0.84, 0.42, 1);
+}
+
+.splash-logo {
+  font-size: 3rem;
+  letter-spacing: 0.4em;
+  color: #7cfc00;
+  text-shadow: 0 0 8px #7cfc00, 0 0 24px #7cfc00;
+  animation:
+    splash-blink 1.2s steps(1, end) both,
+    splash-glow 2.2s ease-in-out 1.2s infinite;
+}
+
+.splash-sub {
+  font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+/* Entrada del icono: rebota cayendo desde arriba */
+@keyframes splash-bounce {
+  0%   { transform: translateY(-70px) scale(0.6); opacity: 0; }
+  55%  { transform: translateY(10px) scale(1.08); opacity: 1; }
+  75%  { transform: translateY(-5px) scale(0.97); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Parpadeo de neón del logo: se enciende con varios destellos */
+@keyframes splash-blink {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  14%  { opacity: 0.15; }
+  20%  { opacity: 1; }
+  28%  { opacity: 0.35; }
+  36%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Pulso suave del resplandor, tras el parpadeo inicial */
+@keyframes splash-glow {
+  0%, 100% { text-shadow: 0 0 8px #7cfc00, 0 0 24px #7cfc00; }
+  50%      { text-shadow: 0 0 12px #7cfc00, 0 0 40px #7cfc00, 0 0 60px #7cfc00; }
+}
+
+.game {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  padding: 12px;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-size: 3rem;
+  letter-spacing: 0.4em;
+  color: #7cfc00;
+  text-shadow: 0 0 8px #7cfc00, 0 0 24px #7cfc00;
+}
+
+.scoreboard {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin: 0 auto 0.75rem;
+}
+
+.score {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.score .label {
+  font-size: 0.9rem;
+  letter-spacing: 0.1em;
+  opacity: 0.8;
+}
+
+.score .value {
+  font-size: 2.5rem;
+  font-weight: bold;
+}
+
+/* Marcador de partidas al mejor de N */
+.match-score {
+  margin: 0 auto 0.75rem;
+  font-size: 0.9rem;
+  color: #7cfc00;
+  text-shadow: 0 0 8px rgba(124, 252, 0, 0.5);
+}
+
+/* Historial de victorias */
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 auto 0.75rem;
+  font-size: 0.85rem;
+  opacity: 0.9;
+}
+
+.stats-title {
+  opacity: 0.7;
+}
+
+.stats-sep {
+  opacity: 0.5;
+}
+
+.stats-streak {
+  color: #ffb020;
+}
+
+.stats-best {
+  color: #ffd54a;
+}
+
+.reset-stats {
+  margin-left: 0.25rem;
+  padding: 0.1rem 0.4rem;
+  font-size: 0.8rem;
+  font-family: inherit;
+  color: #f5f5f5;
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.reset-stats:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* Contenedor del lienzo y de la pantalla superpuesta */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 5; /* misma proporción que el lienzo (800 x 500) */
+  border-radius: 20px; /* curvatura sutil de monitor de tubo */
+}
+
+/* Filtro CRT: líneas de scanline + viñeta sobre todo el tablero (monitor de tubo) */
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* no bloquea clics ni el arrastre táctil */
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.22) 2px,
+      rgba(0, 0, 0, 0.22) 3px
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(124, 252, 0, 0.10) 0%,
+      rgba(124, 252, 0, 0.04) 45%,
+      rgba(0, 0, 0, 0) 70%
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 45%,
+      rgba(0, 0, 0, 0.35) 75%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+  box-shadow:
+    inset 0 0 50px rgba(0, 0, 0, 0.55),
+    inset 0 0 90px rgba(124, 252, 0, 0.06);
+}
+
+/* Efecto CRT desactivado: quita scanlines, viñeta y curvatura */
+.stage.no-crt {
+  border-radius: 0;
+}
+
+.stage.no-crt canvas {
+  border-radius: 0;
+  box-shadow: 0 0 30px rgba(124, 252, 0, 0.25); /* sin el halo CRT extra */
+}
+
+.stage.no-crt::after {
+  display: none;
+}
+
+/* Vibración al marcar un punto */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(6px, -3px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+}
+
+@keyframes shake-big {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-12px, 6px); }
+  30% { transform: translate(12px, -6px); }
+  45% { transform: translate(-8px, 4px); }
+  60% { transform: translate(8px, -4px); }
+  75% { transform: translate(-4px, 2px); }
+}
+
+/* Vibración sutil al golpear la pelota con la pala.
+   La amplitud se controla con --hit-amp (la fija JavaScript según la velocidad). */
+@keyframes shake-hit {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--hit-amp, 2px) * -1), calc(var(--hit-amp, 2px) * 0.5)); }
+  50% { transform: translate(var(--hit-amp, 2px), calc(var(--hit-amp, 2px) * -0.5)); }
+  75% { transform: translate(calc(var(--hit-amp, 2px) * -0.5), 0); }
+}
+
+.stage.shake {
+  animation: shake 0.35s ease-in-out;
+}
+
+.stage.shake-big {
+  animation: shake-big 0.5s ease-in-out;
+}
+
+.stage.shake-hit {
+  animation: shake-hit 0.12s ease-out;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #0a0a0f;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px; /* sigue la curvatura del monitor */
+  box-shadow:
+    0 0 30px rgba(124, 252, 0, 0.25),
+    0 0 60px rgba(124, 252, 0, 0.15);
+  touch-action: none;
+  /* El re-escalado CSS final también usa vecino más cercano,
+     para mantener el aspecto pixelado nítido en vez de suavizarlo. */
+  image-rendering: -moz-crisp-edges;          /* Firefox */
+  image-rendering: -webkit-optimize-contrast; /* Safari / Chrome antiguo */
+  image-rendering: pixelated;                 /* estándar */
+  image-rendering: crisp-edges;               /* fallback */
+}
+
+/* Modo suave (bilineal): bordes redondeados en vez de píxeles duros */
+canvas.smooth {
+  image-rendering: auto;
+}
+
+/* Pantalla de inicio / fin de partida */
+.overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit; /* sigue la curvatura del monitor */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(5, 5, 10, 0.85);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-title {
+  margin: 0;
+  font-size: 2.5rem;
+  color: #7cfc00;
+  text-shadow: 0 0 12px #7cfc00;
+}
+
+.overlay-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  color: #050508;
+  background: #7cfc00;
+  border: none;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(124, 252, 0, 0.6);
+}
+
+.button:hover {
+  filter: brightness(1.15);
+}
+
+/* Botón secundario tipo enlace (para acciones extra del menú) */
+.link-button {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  color: #7cfc00;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  filter: brightness(1.2);
+}
+
+/* Menú principal y pantalla de configuración */
+#menu-main,
+#menu-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#menu-main.hidden,
+#menu-setup.hidden {
+  display: none;
+}
+
+#menu-main .button {
+  margin-top: 0.25rem;
+}
+
+.menu-links {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.menu-links .link-button {
+  margin-top: 0;
+}
+
+/* Selector de color de las palas */
+.color-options {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.5rem 0;
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.color-swatch:hover {
+  border-color: #ffffff;
+}
+
+.color-swatch.selected {
+  border-color: #7cfc00;
+  box-shadow: 0 0 10px rgba(124, 252, 0, 0.8);
+}
+
+kbd {
+  padding: 0.15rem 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom-width: 3px;
+  border-radius: 4px;
+  background: #1a1a24;
+}
+
+/* Botón de icono (pantalla completa) */
+.icon-button {
+  margin-top: 0.5rem;
+  margin-left: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  font-size: 1.2rem;
+  font-family: inherit;
+  vertical-align: middle;
+  color: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.icon-button:hover {
+  background: #24243a;
+}
+
+/* Control de volumen */
+.volume-control {
+  position: relative;
+  display: inline-block;
+  margin-top: 0.5rem;
+  vertical-align: middle;
+}
+
+.volume-btn {
+  padding: 0.4rem 0.6rem;
+  font-size: 1.2rem;
+  font-family: inherit;
+  line-height: 1;
+  color: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.volume-btn:hover {
+  background: #24243a;
+}
+
+.volume-icon {
+  font-size: 1.2rem;
+  min-width: 1.4em;
+  text-align: center;
+}
+
+/* Panel desplegable con música y efectos por separado */
+.volume-panel {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.7rem 0.8rem;
+  background: #14142b;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  white-space: nowrap;
+}
+
+.volume-panel.hidden {
+  display: none;
+}
+
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.volume-row-icon {
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.volume-slider {
+  width: 120px;
+  accent-color: #7cfc00;
+  cursor: pointer;
+}
+
+/* Botón ON/OFF de la música de fondo */
+.volume-toggle {
+  padding: 0.15rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #050508;
+  background: #7cfc00;
+  border: 1px solid #7cfc00;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.volume-toggle.off {
+  color: #f5f5f5;
+  background: #1a1a24;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Indicador de mando conectado (🎮 encendido/apagado) */
+.gamepad-indicator {
+  margin-top: 0.5rem;
+  margin-left: 0.5rem;
+  font-size: 1.2rem;
+  opacity: 0.25;            /* apagado por defecto */
+  filter: grayscale(1);
+  vertical-align: middle;
+  transition: opacity 0.2s, filter 0.2s;
+}
+
+.gamepad-indicator.on {
+  opacity: 1;
+  filter: none;
+  text-shadow: 0 0 8px #7cfc00;
+}
+
+/* Selector de modo de juego (en la pantalla de inicio) */
+.mode-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* Selector de dificultad (solo visible en modo IA) */
+.difficulty-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.difficulty-label {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* Selector de lado del jugador (solo visible en modo IA) */
+.side-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de "al mejor de" (número de partidas del enfrentamiento) */
+.bestof-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de nombres de los jugadores */
+.names-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de calidad gráfica */
+.quality-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de vibración del mando */
+.vibration-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de tema musical */
+.theme-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de modo de visualización */
+.rendering-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de efecto CRT */
+.crt-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Asignación de mandos */
+.gamepad-assign {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.gamepad-assign .listening {
+  color: #050508;
+  background: #ffd54a;
+  border-color: #ffd54a;
+  box-shadow: 0 0 10px rgba(255, 213, 74, 0.6);
+}
+
+.name-input {
+  width: 110px;
+  padding: 0.35rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: #7cfc00;
+  box-shadow: 0 0 8px rgba(124, 252, 0, 0.4);
+}
+
+.selector-label {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.mode-button {
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  color: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mode-button.selected {
+  color: #050508;
+  background: #7cfc00;
+  border-color: #7cfc00;
+  box-shadow: 0 0 10px rgba(124, 252, 0, 0.5);
+}
+
+/* Utilidad para ocultar elementos */
+.hidden {
+  display: none;
+}
+
+/* Controles táctiles para móvil */
+.touch-controls {
+  display: none; /* solo se muestran en pantallas táctiles o muy estrechas */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.touch-hint {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.touch-btn {
+  min-width: 56px;
+  min-height: 56px;
+  font-size: 1.4rem;
+  font-family: inherit;
+  color: #f5f5f5;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn:active {
+  background: rgba(124, 252, 0, 0.25);
+}
+
+.touch-pause {
+  min-width: 64px;
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .touch-controls {
+    display: flex;
+  }
+}
+
+/* Ajustes de tamaño en pantallas pequeñas */
+@media (max-width: 600px) {
+  .title {
+    font-size: 2rem;
+    letter-spacing: 0.25em;
+  }
+
+  .score .value {
+    font-size: 1.8rem;
+  }
+
+  .score .label {
+    font-size: 0.75rem;
+  }
+
+  .overlay-title {
+    font-size: 1.8rem;
+  }
+
+  .overlay-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .mode-button {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .button {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .overlay {
+    gap: 0.35rem;
+    padding: 4px;
+  }
+
+  .mode-selector,
+  .difficulty-selector,
+  .side-selector,
+  .bestof-selector,
+  .names-selector,
+  .quality-selector,
+  .vibration-selector,
+  .theme-selector,
+  .rendering-selector,
+  .crt-selector,
+  .gamepad-assign {
+    margin-top: 0.25rem;
+  }
+
+  .name-input {
+    width: 90px;
+  }
+}
+
+/* Aviso de orientación para móvil */
+.rotate-hint {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: rgba(124, 252, 0, 0.95);
+  color: #050508;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.rotate-hint-close {
+  margin-left: 4px;
+  padding: 0 6px;
+  font-size: 1rem;
+  line-height: 1;
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.rotate-hint.dismissed {
+  display: none;
+}
+
+/* Solo se muestra en móvil (táctil) y en orientación vertical */
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+  .rotate-hint {
+    display: flex;
+  }
+}
+
+/* Aviso temporal (toast) */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  background: rgba(20, 20, 35, 0.95);
+  color: #f5f5f5;
+  border: 1px solid rgba(124, 252, 0, 0.5);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Pantalla de estadísticas (modal) */
+.stats-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 5, 10, 0.85);
+}
+
+.stats-modal.hidden {
+  display: none;
+}
+
+.stats-panel {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  text-align: center;
+  background: #14142b;
+  border: 1px solid rgba(124, 252, 0, 0.4);
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(124, 252, 0, 0.25);
+}
+
+.stats-panel h2 {
+  margin: 0 0 1rem;
+  color: #7cfc00;
+  text-shadow: 0 0 10px #7cfc00;
+}
+
+.stats-group h3 {
+  margin: 0.9rem 0 0.25rem;
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  opacity: 0.9;
+}
+
+.stats-row {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+.stats-total {
+  font-size: 1.1rem;
+}
+
+.stats-winloss {
+  color: #7cfc00;
+}
+
+.stats-time {
+  color: #8ecae6;
+  opacity: 0.9;
+}
+
+/* Panel de controles: texto alineado a la izquierda para leerlo mejor */
+.controls-panel {
+  text-align: left;
+}
+
+.controls-panel h2 {
+  text-align: center;
+}
+
+/* En pantalla completa, el lienzo crece para llenar la pantalla */
+.is-fullscreen .game {
+  max-width: none;
+  padding: 8px;
+}
+
+.is-fullscreen .title {
+  display: none;
+}
+
+.is-fullscreen .stage {
+  /* 200px es el alto aproximado de marcador, estadísticas y pie */
+  width: min(100%, calc((100vh - 200px) * 1.6));
+  margin: 0 auto;
+}
+
+/* Botón flotante para salir de pantalla completa */
+.fill-exit {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 40;
+  width: 42px;
+  height: 42px;
+  font-size: 1.3rem;
+  line-height: 1;
+  color: #f5f5f5;
+  background: rgba(20, 20, 35, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+/* Modo "relleno" en móvil: llena todo el alto disponible, sin bordes */
+@media (hover: none) and (pointer: coarse) {
+  body.is-fullscreen .game {
+    position: fixed;
+    inset: 0;
+    max-width: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #050508;
+  }
+
+  body.is-fullscreen .title,
+  body.is-fullscreen .stats,
+  body.is-fullscreen .match-score,
+  body.is-fullscreen .volume-control,
+  body.is-fullscreen .icon-button,
+  body.is-fullscreen .gamepad-indicator,
+  body.is-fullscreen .touch-controls {
+    display: none;
+  }
+
+  body.is-fullscreen .scoreboard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 6;
+    margin: 0;
+    padding: 0.5rem 1rem;
+    background: rgba(5, 5, 10, 0.75);
+  }
+
+  body.is-fullscreen .stage {
+    width: min(100vw, calc(100vh * 1.6)); /* llena el alto manteniendo la proporción 8:5 */
+    margin: 0 auto;
+  }
+
+  body.is-fullscreen canvas {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

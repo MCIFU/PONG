@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pong</title>
+
+  <!-- PWA -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#7cfc00">
+
+  <!-- iOS / pantalla completa -->
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Pong">
+
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Pantalla de bienvenida (splash) que se muestra al abrir la app -->
+  <div id="splash" class="splash">
+    <img class="splash-icon" src="icon-192.png" alt="Icono de Pong" width="96" height="96">
+    <div class="splash-logo">PONG</div>
+    <div class="splash-sub">Cargando…</div>
+  </div>
+
+  <div id="rotate-hint" class="rotate-hint">
+    <span>📱 Gira el móvil a horizontal para jugar mejor</span>
+    <button id="rotate-hint-close" class="rotate-hint-close" type="button" aria-label="Cerrar">✕</button>
+  </div>
+
+  <main class="game">
+    <h1 class="title">PONG</h1>
+
+    <div class="scoreboard">
+      <div class="score">
+        <span id="label1" class="label">Jugador 1</span>
+        <span id="score1" class="value">0</span>
+      </div>
+      <div class="score">
+        <span id="label2" class="label">Jugador 2</span>
+        <span id="score2" class="value">0</span>
+      </div>
+    </div>
+
+    <div id="match-score" class="match-score hidden">Partidas: 0 - 0 (al mejor de 1)</div>
+
+    <div class="stats">
+      <span class="stats-title">🏆 Victorias</span>
+      <span id="stats-p1">Jugador 1: 0</span>
+      <span class="stats-sep">·</span>
+      <span id="stats-p2">Jugador 2: 0</span>
+      <span class="stats-sep">·</span>
+      <span id="stats-best" class="stats-best">🥇 Mejor: —</span>
+      <span id="stats-streak" class="stats-streak hidden">🔥 Racha: 0 (mejor: 0)</span>
+      <button id="stats-open" class="reset-stats" type="button" title="Ver estadísticas">📊</button>
+      <button id="reset-stats" class="reset-stats" type="button" title="Borrar historial de victorias">✕</button>
+    </div>
+
+    <div class="stage">
+      <canvas id="game" width="800" height="500"></canvas>
+
+      <!-- Pantalla que cubre el juego (inicio y fin de partida) -->
+      <div id="overlay" class="overlay">
+        <p id="overlay-title" class="overlay-title">PONG</p>
+        <p id="overlay-subtitle" class="overlay-subtitle">Elige una opción</p>
+
+        <div id="menu-main">
+          <button id="menu-jugar" class="button" type="button">Jugar</button>
+          <div class="menu-links">
+            <button id="menu-controles" class="link-button" type="button">🎮 Controles</button>
+            <button id="menu-estadisticas" class="link-button" type="button">📊 Estadísticas</button>
+            <button id="install-btn" class="link-button hidden" type="button">📲 Instalar</button>
+          </div>
+        </div>
+
+        <div id="menu-setup" class="hidden">
+          <div class="mode-selector">
+            <button id="mode-pvp" class="mode-button selected" type="button">2 jugadores</button>
+            <button id="mode-ai" class="mode-button" type="button">1 jugador (vs IA)</button>
+          </div>
+          <div id="difficulty-selector" class="difficulty-selector">
+            <span class="difficulty-label">Dificultad</span>
+            <button id="diff-facil" class="mode-button" type="button">Fácil</button>
+            <button id="diff-normal" class="mode-button selected" type="button">Normal</button>
+            <button id="diff-dificil" class="mode-button" type="button">Difícil</button>
+          </div>
+          <div id="side-selector" class="side-selector hidden">
+            <span class="selector-label">Lado</span>
+            <button id="side-left" class="mode-button selected" type="button">Izquierda</button>
+            <button id="side-right" class="mode-button" type="button">Derecha</button>
+          </div>
+          <div class="bestof-selector">
+            <span class="selector-label">Al mejor de</span>
+            <button id="bestof-1" class="mode-button selected" type="button">1</button>
+            <button id="bestof-3" class="mode-button" type="button">3</button>
+            <button id="bestof-5" class="mode-button" type="button">5</button>
+          </div>
+          <button id="menu-personalizar" class="link-button" type="button">🎨 Personalizar</button>
+          <button id="menu-volver" class="link-button" type="button">← Volver</button>
+        </div>
+
+        <button id="restart" class="button hidden">Empezar</button>
+      </div>
+    </div>
+
+    <div id="touch-controls" class="touch-controls">
+      <button id="touch-pause" class="touch-btn touch-pause" aria-label="Pausa">⏸</button>
+      <button id="touch-menu" class="touch-btn" aria-label="Volver al menú">🏠</button>
+      <span class="touch-hint">Arrastra por el tablero para mover tu pala</span>
+    </div>
+
+    <div class="volume-control">
+      <button id="volume-btn" class="volume-btn" type="button" aria-label="Volumen" title="Volumen de música y efectos">
+        <span id="volume-icon" class="volume-icon">🔊</span>
+      </button>
+      <div id="volume-panel" class="volume-panel hidden">
+        <div class="volume-row">
+          <span class="volume-row-icon" title="Música">🎵</span>
+          <input id="music-volume" class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen de música">
+          <button id="music-toggle" class="volume-toggle" type="button" aria-pressed="true" title="Encender/apagar la música de fondo">ON</button>
+        </div>
+        <div class="volume-row">
+          <span class="volume-row-icon" title="Efectos">💥</span>
+          <input id="effects-volume" class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen de efectos">
+        </div>
+      </div>
+    </div>
+    <button id="fullscreen" class="icon-button" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
+    <button id="menu" class="icon-button" aria-label="Volver al menú" title="Volver al menú">🏠</button>
+    <span id="gamepad-indicator" class="gamepad-indicator" title="Sin mando conectado">🎮</span>
+  </main>
+
+  <div id="stats-modal" class="stats-modal hidden">
+    <div class="stats-panel" role="dialog" aria-modal="true" aria-labelledby="stats-title">
+      <h2 id="stats-title">📊 Estadísticas</h2>
+      <p id="stats-total" class="stats-row stats-total"></p>
+      <p id="stats-winloss" class="stats-row stats-winloss"></p>
+      <p id="stats-time" class="stats-row stats-time"></p>
+      <p id="stats-best-line" class="stats-row stats-best"></p>
+      <div class="stats-group">
+        <h3>🤖 Contra la IA</h3>
+        <p id="stats-ia-line" class="stats-row"></p>
+        <p id="stats-ia-percent" class="stats-row"></p>
+        <p id="stats-best-streaks" class="stats-row stats-streak"></p>
+      </div>
+      <div class="stats-group">
+        <h3>👥 2 jugadores</h3>
+        <p id="stats-pvp-line" class="stats-row"></p>
+        <p id="stats-pvp-percent" class="stats-row"></p>
+      </div>
+      <button id="stats-close" class="button" type="button">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="controls-modal" class="stats-modal hidden">
+    <div class="stats-panel controls-panel" role="dialog" aria-modal="true" aria-labelledby="controls-title">
+      <h2 id="controls-title">🎮 Controles</h2>
+      <div class="stats-group">
+        <h3>⌨️ Teclado</h3>
+        <p class="stats-row"><kbd>W</kbd> / <kbd>S</kbd> — pala izquierda (subir / bajar)</p>
+        <p class="stats-row"><kbd>↑</kbd> / <kbd>↓</kbd> — pala derecha (subir / bajar)</p>
+        <p class="stats-row"><kbd>ESPACIO</kbd> — empezar / reiniciar</p>
+        <p class="stats-row"><kbd>P</kbd> — pausar</p>
+        <p class="stats-row"><kbd>ESC</kbd> — volver al menú</p>
+        <p class="stats-row"><kbd>F</kbd> — pantalla completa</p>
+        <p class="stats-row"><kbd>M</kbd> — silenciar / restaurar sonido</p>
+      </div>
+      <div class="stats-group">
+        <h3>🎮 Mando</h3>
+        <p class="stats-row">Joystick izquierdo o cruceta — mover la pala</p>
+        <p class="stats-row">Start — empezar / reiniciar</p>
+        <p class="stats-row">Select — pausar</p>
+        <p class="stats-row">Cada mando se asigna a una pala en 🎨 Personalizar</p>
+      </div>
+      <div class="stats-group">
+        <h3>📱 Táctil</h3>
+        <p class="stats-row">Arrastra por el tablero para mover tu pala</p>
+        <p class="stats-row">⏸ pausa · 🏠 volver al menú</p>
+      </div>
+      <button id="controls-close" class="button" type="button">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="personalize-modal" class="stats-modal hidden">
+    <div class="stats-panel controls-panel" role="dialog" aria-modal="true" aria-labelledby="personalize-title">
+      <h2 id="personalize-title">🎨 Personalizar</h2>
+      <div class="stats-group">
+        <h3>Color de las palas</h3>
+        <div class="color-options">
+          <button class="color-swatch selected" type="button" data-color="#ffffff" title="Por defecto" aria-label="Color por defecto" style="background:#ffffff"></button>
+          <button class="color-swatch" type="button" data-color="#7cfc00" title="Verde" aria-label="Verde" style="background:#7cfc00"></button>
+          <button class="color-swatch" type="button" data-color="#00e5ff" title="Cian" aria-label="Cian" style="background:#00e5ff"></button>
+          <button class="color-swatch" type="button" data-color="#ff4dd8" title="Rosa" aria-label="Rosa" style="background:#ff4dd8"></button>
+          <button class="color-swatch" type="button" data-color="#ffd54a" title="Amarillo" aria-label="Amarillo" style="background:#ffd54a"></button>
+          <button class="color-swatch" type="button" data-color="#ff5252" title="Rojo" aria-label="Rojo" style="background:#ff5252"></button>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Nombres</h3>
+        <div class="names-selector">
+          <input id="name1" class="name-input" type="text" maxlength="12" placeholder="Jugador 1" aria-label="Nombre del jugador de la izquierda">
+          <input id="name2" class="name-input" type="text" maxlength="12" placeholder="Jugador 2" aria-label="Nombre del jugador de la derecha">
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Calidad gráfica</h3>
+        <div class="quality-selector">
+          <span class="selector-label">Resolución</span>
+          <button id="quality-baja" class="mode-button" type="button">Baja</button>
+          <button id="quality-media" class="mode-button" type="button">Media</button>
+          <button id="quality-alta" class="mode-button selected" type="button">Alta</button>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Modo de visualización</h3>
+        <div class="rendering-selector">
+          <button id="rendering-pixelado" class="mode-button selected" type="button">Pixelado</button>
+          <button id="rendering-suave" class="mode-button" type="button">Suave</button>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Efecto CRT</h3>
+        <div class="crt-selector">
+          <button id="crt-on" class="mode-button selected" type="button">Activado</button>
+          <button id="crt-off" class="mode-button" type="button">Desactivado</button>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Tema musical</h3>
+        <div class="theme-selector">
+          <button id="theme-clasico" class="mode-button selected" type="button">Clásico</button>
+          <button id="theme-energetico" class="mode-button" type="button">Energético</button>
+          <button id="theme-tranquilo" class="mode-button" type="button">Tranquilo</button>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Vibración del mando</h3>
+        <div class="vibration-selector">
+          <button id="vibration-on" class="mode-button selected" type="button">Activada</button>
+          <button id="vibration-off" class="mode-button" type="button">Desactivada</button>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Mandos</h3>
+        <div class="gamepad-assign">
+          <button id="assign-left" class="mode-button" type="button">Izquierda: Mando 1</button>
+          <button id="assign-right" class="mode-button" type="button">Derecha: Mando 2</button>
+        </div>
+        <p class="stats-row">Pulsa un botón y luego un botón del mando que quieras usar.</p>
+      </div>
+      <button id="personalize-close" class="button" type="button">Hecho</button>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden" role="status"></div>
+
+  <button id="fill-exit" class="fill-exit hidden" type="button" aria-label="Salir de pantalla completa" title="Salir de pantalla completa">✕</button>
+
+  <script src="script.js"></script>
+</body>
+</html>

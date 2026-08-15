@@ -800,9 +800,15 @@ kbd {
   gap: 0.5rem;
 }
 
-.volume-row-icon {
-  min-width: 1.4em;
-  text-align: center;
+.volume-label {
+  min-width: 5em;
+  text-align: right;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
 }
 
 .volume-slider {
@@ -1020,20 +1026,18 @@ button:focus-visible {
   margin-top: 12px;
 }
 
-.touch-hint {
-  font-size: 0.8rem;
-  opacity: 0.7;
-}
-
 .touch-btn {
   min-width: 56px;
   min-height: 56px;
   font-size: 1.4rem;
   font-family: inherit;
-  color: #f5f5f5;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--accent);
+  background: rgba(var(--accent-rgb), 0.08);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
   border-radius: 10px;
+  box-shadow:
+    0 2px 0 rgba(var(--accent-rgb), 0.25),
+    0 0 14px rgba(var(--accent-rgb), 0.12);
   cursor: pointer;
   touch-action: none;
   user-select: none;
@@ -1042,15 +1046,20 @@ button:focus-visible {
 }
 
 .touch-btn:active {
+  transform: translateY(1px); /* se hunde como los demás botones */
   background: rgba(var(--accent-rgb), 0.25);
+  box-shadow:
+    0 0 0 rgba(var(--accent-rgb), 0.25),
+    0 0 20px rgba(var(--accent-rgb), 0.3);
 }
 
 .touch-pause {
   min-width: 64px;
 }
 
+/* Los botones táctiles solo aparecen durante la partida (clase .in-game) */
 @media (hover: none) and (pointer: coarse), (max-width: 700px) {
-  .touch-controls {
+  .touch-controls.in-game {
     display: flex;
   }
 }
@@ -1454,7 +1463,312 @@ button:focus-visible {
   text-align: center;
 }
 
+/* --- Controles: filas tipo tarjeta con teclas visuales --- */
+.ctrl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.ctrl-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.ctrl-row:hover {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+/* Columna de teclas: ancho fijo para que todas las filas queden alineadas */
+.ctrl-keys {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  min-width: 92px;
+}
+
+.ctrl-keys kbd {
+  min-width: 1.7em;
+  text-align: center;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  padding: 0.28rem 0.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-bottom-width: 3px;
+  border-radius: 5px;
+  background: #14141d;
+  color: var(--accent);
+}
+
+.key-sep {
+  color: rgba(255, 255, 255, 0.4);
+  font-size: 0.8rem;
+}
+
+.ctrl-action {
+  margin: 0;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+/* Columna de iconos táctiles: mismo ancho que las teclas */
+.ctrl-icon {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-width: 92px;
+  color: var(--accent);
+}
+
+/* Icono "arrastrar": punto deslizándose sobre una línea */
+.icon-drag {
+  width: 1em;
+  height: 0.6em;
+  border-bottom: 0.18em solid currentColor;
+}
+.icon-drag::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.36em;
+  height: 0.36em;
+  background: currentColor;
+  border-radius: 50%;
+}
+
 /* Accesibilidad: si el sistema pide menos movimiento, reducimos las animaciones */
+/* =====================================================================
+   OPTIMIZACIÓN PARA MÓVIL (Android e iOS).
+   Todo va dentro de media queries de dispositivo táctil: no modifica
+   nada de la versión de escritorio.
+   ===================================================================== */
+
+/* --- Táctil en general: toques limpios y objetivos cómodos --- */
+@media (hover: none) and (pointer: coarse) {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Sin retardo de doble-tap (zoom) al pulsar botones en iOS.
+     (Excluimos .touch-btn, que ya usa touch-action: none.) */
+  .button,
+  .mode-button,
+  .link-button,
+  .volume-toggle,
+  .rotate-hint-close {
+    touch-action: manipulation;
+  }
+
+  /* Botones más altos, fáciles de acertar con el pulgar */
+  .button,
+  .mode-button,
+  .volume-toggle {
+    min-height: 44px;
+  }
+  .link-button {
+    min-height: 40px;
+  }
+
+  /* Respeta el notch de iOS en horizontal (no tapar las palas) */
+  .game {
+    padding-left: calc(12px + env(safe-area-inset-left));
+    padding-right: calc(12px + env(safe-area-inset-right));
+  }
+}
+
+/* --- Teléfonos/tablets en horizontal: el tablero se ajusta a la ALTURA
+       disponible (en vez de fijarse por el ancho, que lo hacía desbordarse).
+       El marcador se convierte en un HUD flotante sobre el tablero para no
+       quitarle ni un píxel de alto a la partida. --- */
+@media (orientation: landscape) and (hover: none) and (pointer: coarse) {
+  body {
+    align-items: stretch; /* el juego ocupa todo el alto, sin recortes arriba */
+  }
+
+  .game {
+    position: relative; /* ancla para el marcador flotante */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 100%;
+    padding-top: 4px;
+    padding-bottom: 4px;
+  }
+
+  /* El título "PONG" solo decora: en horizontal lo ocultamos para dejar
+     todo el alto al tablero. */
+  .title {
+    display: none;
+  }
+
+  /* Marcador flotante (HUD) sobre el tablero: no ocupa alto propio y deja
+     todo el hueco a la partida. Se centra arriba, donde el lienzo está libre. */
+  .scoreboard {
+    position: absolute;
+    top: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 5;
+    gap: 0.4rem;
+    margin: 0;
+    width: auto;
+    padding: 0.25rem 0.5rem;
+    background: rgba(10, 10, 15, 0.35);
+    border-radius: 10px;
+  }
+  .score {
+    gap: 0.05rem;
+    max-width: 150px;
+    padding: 0.15rem 0.5rem 0.25rem;
+  }
+  .score .value {
+    font-size: 1.15rem;
+    text-shadow:
+      1px 1px 0 var(--hud-accent),
+      2px 2px 0 var(--hud-accent),
+      0 0 10px rgba(var(--hud-accent-rgb), 0.6);
+  }
+  .score .label {
+    font-size: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+  .vs {
+    width: 28px;
+    height: 28px;
+    font-size: 0.5rem;
+  }
+  .vs::before {
+    inset: 4px;
+  }
+
+  /* Insignias flotantes: dificultad arriba a la derecha, punto de partido abajo */
+  .difficulty-badge {
+    position: absolute;
+    top: 6px;
+    right: calc(8px + env(safe-area-inset-right));
+    margin: 0;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.5rem;
+    z-index: 5;
+  }
+  .game-point {
+    position: absolute;
+    bottom: calc(8px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%);
+    margin: 0;
+    font-size: 0.7rem;
+    z-index: 5;
+  }
+
+  /* En modo claro, el fondo del HUD flotante pasa a ser claro */
+  body.light .scoreboard {
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  /* El tablero ocupa casi todo el alto: solo deja hueco para los botones
+     táctiles de abajo (antes reservaba ~140px para el marcador y las
+     insignias, que ahora flotan sobre el lienzo). */
+  .stage {
+    height: calc(100vh - 58px);
+    height: calc(100dvh - 58px); /* dvh = alto real con la barra del navegador */
+    width: auto;
+    max-width: 100%;
+    margin: 0 auto;
+    border-radius: 10px;
+  }
+
+  /* Controles táctiles compactos (sin el texto de ayuda) */
+  .touch-controls {
+    margin-top: 2px;
+    gap: 6px;
+  }
+  .touch-btn {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 1.1rem;
+    border-radius: 8px;
+  }
+  .touch-pause {
+    min-width: 48px;
+  }
+
+  /* Menús del overlay: compactos para caber en el tablero pequeño */
+  .overlay {
+    gap: 0.3rem;
+    padding: 4px;
+  }
+  .overlay-title {
+    font-size: 1.4rem;
+  }
+  .overlay-subtitle {
+    font-size: 0.8rem;
+  }
+  .button {
+    margin-top: 0.4rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+  #menu-main > .button {
+    margin-top: 0.25rem;
+    padding: 0.6rem 1.6rem;
+    font-size: 1rem;
+  }
+  .menu-links {
+    gap: 0.4rem;
+    margin-top: 0.4rem;
+  }
+  .menu-links .button {
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
+  }
+  .mode-button {
+    padding: 0.3rem 0.5rem;
+    font-size: 0.78rem;
+  }
+  .link-button {
+    font-size: 0.75rem;
+  }
+
+  /* Modales: a pantalla casi completa, con margen para el notch */
+  .stats-modal {
+    padding: 6px calc(6px + env(safe-area-inset-right)) 6px calc(6px + env(safe-area-inset-left));
+  }
+  .stats-panel {
+    max-width: 100%;
+    max-height: 100dvh;
+    padding: 1rem;
+    border-radius: 12px;
+  }
+}
+
+/* --- Pantallas estrechas (retrato): modales a todo lo ancho --- */
+@media (max-width: 600px) {
+  .stats-modal {
+    padding: 10px;
+  }
+  .stats-panel {
+    max-width: 100%;
+    padding: 1.1rem;
+    border-radius: 12px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -1543,11 +1857,36 @@ body.light kbd {
   border-color: rgba(0, 0, 0, 0.3);
 }
 
+body.light .ctrl-row {
+  border-color: rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.03);
+}
+
+body.light .ctrl-row:hover {
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.light .ctrl-keys kbd {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.3);
+  color: var(--accent);
+}
+
+body.light .key-sep {
+  color: rgba(0, 0, 0, 0.4);
+}
+
 
 body.light .touch-btn {
-  background: rgba(0, 0, 0, 0.05);
-  border-color: rgba(0, 0, 0, 0.25);
-  color: #1a1a24;
+  background: rgba(var(--accent-rgb), 0.06);
+  border-color: rgba(var(--accent-rgb), 0.4);
+  color: var(--accent);
+  box-shadow: 0 2px 0 rgba(var(--accent-rgb), 0.2);
+}
+
+body.light .touch-btn:active {
+  background: rgba(var(--accent-rgb), 0.18);
 }
 
 body.light .color-swatch {

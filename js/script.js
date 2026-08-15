@@ -21,6 +21,7 @@ const restartBtn = document.getElementById('restart');
 const musicVolumeSlider = document.getElementById('music-volume');
 const effectsVolumeSlider = document.getElementById('effects-volume');
 const musicToggleBtn = document.getElementById('music-toggle');
+const effectsToggleBtn = document.getElementById('effects-toggle');
 const themeClasicoBtn = document.getElementById('theme-clasico');
 const themeEnergeticoBtn = document.getElementById('theme-energetico');
 const themeTranquiloBtn = document.getElementById('theme-tranquilo');
@@ -54,8 +55,11 @@ const menuJugarBtn = document.getElementById('menu-jugar');
 const menuControlesBtn = document.getElementById('menu-controles');
 const menuEstadisticasBtn = document.getElementById('menu-estadisticas');
 const menuSonidoBtn = document.getElementById('menu-sonido');
+const menuIdiomaBtn = document.getElementById('menu-idioma');
 const menuPersonalizarBtn = document.getElementById('menu-personalizar');
 const menuVolverBtn = document.getElementById('menu-volver');
+const languageModal = document.getElementById('language-modal');
+const languageCloseBtn = document.getElementById('language-close');
 const installBtn = document.getElementById('install-btn');
 const personalizeModal = document.getElementById('personalize-modal');
 const personalizeCloseBtn = document.getElementById('personalize-close');
@@ -69,6 +73,7 @@ const themeLightBtn = document.getElementById('theme-light');
 const themeSystemBtn = document.getElementById('theme-system');
 const touchPauseBtn = document.getElementById('touch-pause');
 const touchMenuBtn = document.getElementById('touch-menu');
+const touchControlsEl = document.getElementById('touch-controls');
 const statsCloseBtn = document.getElementById('stats-close');
 const statsResetBtn = document.getElementById('stats-reset');
 const statsModal = document.getElementById('stats-modal');
@@ -90,6 +95,205 @@ const stage = document.querySelector('.stage');
 
 // Tipografías del juego. La arcade está embebida en la PWA (offline).
 const DISPLAY_FONT = "'Press Start 2P', 'Arial Rounded MT Bold', 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif";
+
+// 1.5. Idiomas (internacionalización)
+// El juego se puede jugar en español e inglés. Cada idioma es un diccionario
+// clave->texto; applyLanguage() aplica el idioma actual a la interfaz.
+let language = 'es';
+
+const TRANSLATIONS = {
+  es: {
+    'common.close': 'Cerrar',
+    'common.player1': 'Jugador 1',
+    'common.player2': 'Jugador 2',
+    'menu.play': 'Jugar', 'menu.controls': 'Controles', 'menu.stats': 'Estadísticas', 'menu.sound': 'Sonido',
+    'menu.language': 'Idioma', 'menu.install': 'Instalar',
+    'setup.subtitle': 'Configura la partida',
+    'setup.modeAi': '1 jugador (vs IA)', 'setup.modePvp': '2 jugadores',
+    'setup.difficulty': 'Dificultad', 'setup.easy': 'Fácil', 'setup.normal': 'Normal', 'setup.hard': 'Difícil',
+    'setup.side': 'Lado', 'setup.left': 'Izquierda', 'setup.right': 'Derecha',
+    'setup.points': 'Puntos para ganar',
+    'setup.customize': 'Personalizar', 'setup.back': '← Volver', 'setup.start': 'Empezar',
+    'desc.facil': 'Pala larga. La IA es torpe y falla a menudo.',
+    'desc.normal': 'Pala media. La IA comete algunos errores.',
+    'desc.dificil': 'Pala corta. La IA predice la trayectoria y casi no falla.',
+    'rotate.hint': 'Gira el móvil a horizontal para jugar mejor',
+    'touch.hint': 'Arrastra por el tablero para mover tu pala',
+    'touch.pause': 'Pausa', 'touch.back': 'Volver al menú',
+    'gamepoint': '¡Punto de partido!',
+    'stats.title': 'Estadísticas', 'stats.total': 'Partidas', 'stats.wins': 'Victorias', 'stats.losses': 'Derrotas',
+    'stats.time': 'Tiempo', 'stats.best': 'Mejor resultado', 'stats.vsIa': 'vs IA', 'stats.againstAi': 'Contra la IA',
+    'stats.streak': 'Mejor racha', 'stats.reset': 'Borrar historial', 'stats.ia': 'IA',
+    'stats.winBarAria': 'Porcentaje de victorias contra la IA', 'stats.pvpBarAria': 'Porcentaje de victorias del jugador 1',
+    'stats.winPct': 'Victorias: {pct}%', 'stats.winPctP1': 'Victorias J1: {pct}%',
+    'controls.title': 'Controles', 'controls.keyboard': 'Teclado',
+    'controls.ws': 'Pala izquierda (subir / bajar)', 'controls.arrows': 'Pala derecha (subir / bajar)',
+    'controls.space': 'Empezar / reiniciar', 'controls.pause': 'Pausar', 'controls.esc': 'Volver al menú',
+    'controls.mute': 'Silenciar / restaurar sonido', 'controls.touch': 'Táctil',
+    'controls.touchDrag': 'Arrastra por el tablero para mover tu pala',
+    'controls.touchBtns': 'Pausa y volver al menú con los botones táctiles',
+    'sound.title': 'Sonido', 'sound.volume': 'Volumen', 'sound.music': 'Música', 'sound.effects': 'Efectos',
+    'sound.toggleTitle': 'Encender/apagar la música de fondo', 'sound.effectsToggle': 'Encender/apagar los efectos de sonido', 'sound.theme': 'Tema musical',
+    'sound.themeClassic': 'Clásico', 'sound.themeEnergy': 'Energético', 'sound.themeRelax': 'Tranquilo',
+    'language.title': 'Idioma',
+    'lang.es': 'Español', 'lang.en': 'Inglés',
+    'customize.title': 'Personalizar', 'customize.paddleColor': 'Color de las palas', 'customize.names': 'Nombres',
+    'customize.palette': 'Tema de color', 'customize.mode': 'Tema (claro / oscuro)',
+    'customize.dark': 'Oscuro', 'customize.light': 'Claro', 'customize.system': 'Sistema',
+    'customize.reset': 'Restablecer', 'customize.resetAll': 'Restablecer todo',
+    'customize.resetDesc': 'Vuelve a los valores por defecto: colores, volúmenes, temas y estadísticas.',
+    'customize.done': 'Hecho', 'customize.p1': 'Jugador 1', 'customize.p2': 'Jugador 2',
+    'customize.p1Aria': 'Nombre del jugador de la izquierda', 'customize.p2Aria': 'Nombre del jugador de la derecha',
+    'customize.default': 'Por defecto (sigue el tema)',
+    'customize.green': 'Verde', 'customize.blue': 'Azul', 'customize.amber': 'Ámbar', 'customize.pink': 'Rosa',
+    'customize.cyan': 'Cian', 'customize.yellow': 'Amarillo', 'customize.red': 'Rojo',
+    'game.win': '¡Has ganado, {name}!', 'game.iaWins': '¡La IA gana!', 'game.playerWins': '¡{name} gana!',
+    'game.record': '¡Nuevo récord!', 'game.bestStreak': 'Mejor racha en {diff}: {n}',
+    'game.result': 'Resultado: {s1} - {s2}', 'game.playAgain': 'Jugar de nuevo', 'game.serve': 'SACA',
+    'pause.title': 'PAUSA', 'pause.continue': 'Pulsa P para continuar',
+    'pause.restart': 'ESPACIO para reiniciar', 'pause.exit': 'ESC para salir al menú',
+    'toast.muted': 'Sonido silenciado (M para restaurar)', 'toast.unmuted': 'Sonido restaurado',
+    'toast.reset': 'Ajustes restablecidos', 'toast.installing': '¡Instalando la app…!', 'toast.installed': '¡App instalada!',
+    'confirm.resetStats': '¿Borrar el historial de victorias?',
+    'confirm.resetAll': '¿Restablecer todos los ajustes y estadísticas a los valores por defecto?',
+    'time.h': 'h', 'time.min': 'min', 'time.s': 's'
+  },
+  en: {
+    'common.close': 'Close', 'common.player1': 'Player 1', 'common.player2': 'Player 2',
+    'menu.play': 'Play', 'menu.controls': 'Controls', 'menu.stats': 'Statistics', 'menu.sound': 'Sound',
+    'menu.language': 'Language', 'menu.install': 'Install',
+    'setup.subtitle': 'Set up the match',
+    'setup.modeAi': '1 player (vs AI)', 'setup.modePvp': '2 players',
+    'setup.difficulty': 'Difficulty', 'setup.easy': 'Easy', 'setup.normal': 'Normal', 'setup.hard': 'Hard',
+    'setup.side': 'Side', 'setup.left': 'Left', 'setup.right': 'Right',
+    'setup.points': 'Points to win',
+    'setup.customize': 'Customize', 'setup.back': '← Back', 'setup.start': 'Start',
+    'desc.facil': 'Long paddle. The AI is clumsy and often misses.',
+    'desc.normal': 'Medium paddle. The AI makes some mistakes.',
+    'desc.dificil': 'Short paddle. The AI predicts the trajectory and almost never misses.',
+    'rotate.hint': 'Turn your phone sideways for a better experience',
+    'touch.hint': 'Drag on the board to move your paddle',
+    'touch.pause': 'Pause', 'touch.back': 'Back to menu',
+    'gamepoint': 'Match point!',
+    'stats.title': 'Statistics', 'stats.total': 'Games', 'stats.wins': 'Wins', 'stats.losses': 'Losses',
+    'stats.time': 'Time', 'stats.best': 'Best result', 'stats.vsIa': 'vs AI', 'stats.againstAi': 'Against the AI',
+    'stats.streak': 'Best streak', 'stats.reset': 'Clear history', 'stats.ia': 'AI',
+    'stats.winBarAria': 'Percentage of wins against the AI', 'stats.pvpBarAria': 'Percentage of wins for player 1',
+    'stats.winPct': 'Wins: {pct}%', 'stats.winPctP1': 'Player 1 wins: {pct}%',
+    'controls.title': 'Controls', 'controls.keyboard': 'Keyboard',
+    'controls.ws': 'Left paddle (up / down)', 'controls.arrows': 'Right paddle (up / down)',
+    'controls.space': 'Start / restart', 'controls.pause': 'Pause', 'controls.esc': 'Back to menu',
+    'controls.mute': 'Mute / restore sound', 'controls.touch': 'Touch',
+    'controls.touchDrag': 'Drag on the board to move your paddle',
+    'controls.touchBtns': 'Pause and return to menu with the touch buttons',
+    'sound.title': 'Sound', 'sound.volume': 'Volume', 'sound.music': 'Music', 'sound.effects': 'Effects',
+    'sound.toggleTitle': 'Turn background music on/off', 'sound.effectsToggle': 'Turn sound effects on/off', 'sound.theme': 'Music theme',
+    'sound.themeClassic': 'Classic', 'sound.themeEnergy': 'Energetic', 'sound.themeRelax': 'Relaxing',
+    'language.title': 'Language',
+    'lang.es': 'Spanish', 'lang.en': 'English',
+    'customize.title': 'Customize', 'customize.paddleColor': 'Paddle color', 'customize.names': 'Names',
+    'customize.palette': 'Color theme', 'customize.mode': 'Theme (light / dark)',
+    'customize.dark': 'Dark', 'customize.light': 'Light', 'customize.system': 'System',
+    'customize.reset': 'Reset', 'customize.resetAll': 'Reset everything',
+    'customize.resetDesc': 'Restores default values: colors, volumes, themes and statistics.',
+    'customize.done': 'Done', 'customize.p1': 'Player 1', 'customize.p2': 'Player 2',
+    'customize.p1Aria': 'Name of the left player', 'customize.p2Aria': 'Name of the right player',
+    'customize.default': 'Default (follows theme)',
+    'customize.green': 'Green', 'customize.blue': 'Blue', 'customize.amber': 'Amber', 'customize.pink': 'Pink',
+    'customize.cyan': 'Cyan', 'customize.yellow': 'Yellow', 'customize.red': 'Red',
+    'game.win': 'You won, {name}!', 'game.iaWins': 'The AI wins!', 'game.playerWins': '{name} wins!',
+    'game.record': 'New record!', 'game.bestStreak': 'Best streak in {diff}: {n}',
+    'game.result': 'Result: {s1} - {s2}', 'game.playAgain': 'Play again', 'game.serve': 'SERVE',
+    'pause.title': 'PAUSE', 'pause.continue': 'Press P to continue',
+    'pause.restart': 'SPACE to restart', 'pause.exit': 'ESC to exit to menu',
+    'toast.muted': 'Sound muted (M to restore)', 'toast.unmuted': 'Sound restored',
+    'toast.reset': 'Settings reset', 'toast.installing': 'Installing the app…!', 'toast.installed': 'App installed!',
+    'confirm.resetStats': 'Delete the win history?',
+    'confirm.resetAll': 'Reset all settings and statistics to default values?',
+    'time.h': 'h', 'time.min': 'min', 'time.s': 's'
+  }
+};
+
+// Devuelve el texto traducido de una clave, con sustitución opcional de {variables}
+function t(key, vars) {
+  const dict = TRANSLATIONS[language] || TRANSLATIONS.es;
+  let text = dict[key];
+  if (text === undefined) text = TRANSLATIONS.es[key];
+  if (text === undefined) return key;
+  if (vars) {
+    for (const name in vars) {
+      text = text.split('{' + name + '}').join(String(vars[name]));
+    }
+  }
+  return text;
+}
+
+// Nombre traducible de cada dificultad
+function difficultyName(d) {
+  const keys = { facil: 'setup.easy', normal: 'setup.normal', dificil: 'setup.hard' };
+  return t(keys[d] || 'setup.normal');
+}
+
+// Aplica el idioma actual a toda la interfaz (textos estáticos, atributos y
+// secciones que se rellenan desde JavaScript)
+function applyLanguage() {
+  document.documentElement.lang = language;
+
+  document.querySelectorAll('[data-i18n]').forEach((el) => {
+    el.textContent = t(el.dataset.i18n);
+  });
+  document.querySelectorAll('[data-i18n-placeholder]').forEach((el) => {
+    el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll('[data-i18n-aria]').forEach((el) => {
+    el.setAttribute('aria-label', t(el.dataset.i18nAria));
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach((el) => {
+    el.setAttribute('title', t(el.dataset.i18nTitle));
+  });
+
+  // Marca el idioma seleccionado en el selector
+  ['es', 'en'].forEach((code) => {
+    const btn = document.getElementById('lang-' + code);
+    if (btn) btn.classList.toggle('selected', code === language);
+  });
+
+  // Textos generados por JavaScript
+  if (typeof updateScoreLabels === 'function') updateScoreLabels();
+  if (typeof updateDifficultyBadge === 'function') updateDifficultyBadge();
+  if (typeof difficultyDescEl !== 'undefined' && difficultyDescEl) {
+    difficultyDescEl.textContent = t('desc.' + difficulty);
+  }
+  if (typeof renderStats === 'function') renderStats();
+  if (typeof overlaySubtitle !== 'undefined' && overlaySubtitle) {
+    if (state === 'setup') overlaySubtitle.textContent = t('setup.subtitle');
+  }
+  if (restartBtn) {
+    restartBtn.textContent = state === 'gameover' ? t('game.playAgain') : t('setup.start');
+  }
+}
+
+// Cargamos el idioma guardado en el navegador
+(function loadLanguage() {
+  try {
+    const saved = localStorage.getItem('pong-language');
+    if (TRANSLATIONS[saved]) language = saved;
+  } catch (error) {
+    // sin acceso a localStorage: usamos el español
+  }
+})();
+
+// Cambia el idioma, lo guarda y lo aplica
+function setLanguage(newLanguage) {
+  if (!TRANSLATIONS[newLanguage]) return;
+  language = newLanguage;
+  try {
+    localStorage.setItem('pong-language', language);
+  } catch (error) {
+    // si el navegador bloquea localStorage, no guardamos
+  }
+  applyLanguage();
+}
 
 // 2. Ajustes del juego (puedes cambiar estos números para experimentar)
 const WIDTH = 800;   // ancho lógico del juego
@@ -137,6 +341,10 @@ const PADDLE_WIDTH = 12;
 const PADDLE_SPEED = 6;        // velocidad de las palas
 const BALL_SIZE = 12;
 const MAX_BALL_SPEED = 11;     // tope de velocidad total (deja margen para que cada golpe acelere)
+// En móvil la bola va algo más lenta (~15%): la pantalla es pequeña y la misma
+// velocidad se percibe mucho más rápida que en el escritorio. El tope máximo
+// (MAX_BALL_SPEED) no cambia, así que los rallies siguen teniendo emoción.
+const MOBILE_BALL_FACTOR = 0.85;
 const TRAIL_LENGTH = 12;       // longitud de la estela de la pelota
 const SHADOW_OFFSET = 2;       // desplazamiento (px lógicos) de la sombra dura de palas y pelota
 const AI_ACCEL = 0.22;         // inercia de la IA: cuánto acelera/frena su velocidad por fotograma
@@ -156,9 +364,6 @@ const DIFFICULTY = {
   dificil: { paddleHeight: 70,  ballSpeed: 7.5, aiSpeed: 7, speedUp: 1.10, reactionDelay: 2,  aimError: 5,  reactionJitter: 0.2,
              description: 'Pala corta. La IA predice la trayectoria y casi no falla.' },
 };
-
-// Nombres bonitos de cada dificultad (para mostrarlos en pantalla)
-const DIFFICULTY_LABELS = { facil: 'Fácil', normal: 'Normal', dificil: 'Difícil' };
 
 // Estos valores cambian al elegir la dificultad
 let paddleHeight = DIFFICULTY.normal.paddleHeight;
@@ -243,6 +448,9 @@ let state = 'start';   // 'start' = menú principal | 'setup' = configuración |
 let paused = false;    // true mientras el juego está en pausa
 let launchTimer = 0;   // fotogramas restantes hasta el siguiente número de la cuenta atrás
 let countdown = 0;     // número que se muestra antes del saque (3, 2, 1...)
+let touchHintShown = false; // el aviso táctil solo se muestra en la primera cuenta atrás
+// ¿Es un dispositivo táctil? (se evalúa una vez al cargar, no en cada fotograma)
+const IS_TOUCH_DEVICE = typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
 let aiTargetY = HEIGHT / 2; // a dónde apunta la IA (se actualiza con retraso)
 let aiReactionTimer = 0;    // fotogramas restantes hasta que la IA reaccione
 
@@ -306,6 +514,8 @@ let muted = false;            // true mientras el sonido está silenciado con la
 let savedMusicVolume = 1;     // volumen de música antes de silenciar
 let savedEffectsVolume = 1;   // volumen de efectos antes de silenciar
 let musicEnabled = true;      // ¿está encendida la música de fondo?
+let effectsEnabled = true;    // ¿están encendidos los efectos de sonido?
+let effectsVolumeBeforeOff = 1; // volumen de efectos antes de apagarlos con el botón
 
 // El navegador solo permite sonido después de una acción del usuario
 // (pulsar una tecla o hacer clic), por eso lo activamos al empezar.
@@ -619,6 +829,9 @@ function handleVolumeChange() {
   musicVolume = Number(musicVolumeSlider.value);
   effectsVolume = Number(effectsVolumeSlider.value);
   muted = false; // al mover un deslizador salimos del modo silencio
+  // El deslizador también sirve para quitar el volumen: sincronizamos el botón ON/OFF
+  effectsEnabled = effectsVolume > 0;
+  updateEffectsToggleBtn();
   try {
     localStorage.setItem('pong-music-volume', String(musicVolume));
     localStorage.setItem('pong-effects-volume', String(effectsVolume));
@@ -651,6 +864,33 @@ function updateMusicToggleBtn() {
   musicToggleBtn.classList.toggle('off', !musicEnabled);
   musicToggleBtn.setAttribute('aria-pressed', String(musicEnabled));
   musicToggleBtn.title = musicEnabled ? 'Apagar la música de fondo' : 'Encender la música de fondo';
+}
+
+// Activa o desactiva los efectos de sonido (el botón ON/OFF de la fila Efectos)
+function setEffectsEnabled(enabled) {
+  effectsEnabled = enabled;
+  try {
+    localStorage.setItem('pong-effects-enabled', String(enabled));
+  } catch (error) {
+    // si el navegador bloquea localStorage, no guardamos
+  }
+  if (!enabled) {
+    // Recordamos el volumen actual y lo quitamos por completo
+    effectsVolumeBeforeOff = effectsVolume;
+    effectsVolume = 0;
+  } else {
+    // Restauramos el volumen que había antes de apagarlo
+    effectsVolume = effectsVolumeBeforeOff > 0 ? effectsVolumeBeforeOff : 1;
+  }
+  effectsVolumeSlider.value = String(effectsVolume);
+  updateEffectsToggleBtn();
+}
+
+function updateEffectsToggleBtn() {
+  effectsToggleBtn.textContent = effectsEnabled ? 'ON' : 'OFF';
+  effectsToggleBtn.classList.toggle('off', !effectsEnabled);
+  effectsToggleBtn.setAttribute('aria-pressed', String(effectsEnabled));
+  effectsToggleBtn.title = effectsEnabled ? 'Apagar los efectos de sonido' : 'Encender los efectos de sonido';
 }
 
 // Cambia el tema musical y lo guarda
@@ -741,11 +981,13 @@ function toggleMute() {
     muted = false;
   }
 
-  // Sincronizamos deslizadores, icono y la música de fondo si está sonando
+  // Sincronizamos deslizadores, botones ON/OFF y la música de fondo si está sonando
   musicVolumeSlider.value = String(musicVolume);
   effectsVolumeSlider.value = String(effectsVolume);
+  effectsEnabled = effectsVolume > 0;
+  updateEffectsToggleBtn();
   if (musicGain) musicGain.gain.value = musicVolume * MUSIC_GAIN;
-  showToast(muted ? 'Sonido silenciado (M para restaurar)' : 'Sonido restaurado');
+  showToast(muted ? t('toast.muted') : t('toast.unmuted'));
 }
 
 // 6. Funciones auxiliares
@@ -785,7 +1027,7 @@ function updateDifficultyBadge() {
   const show = mode === 'ai' && state === 'playing';
   difficultyBadge.classList.toggle('hidden', !show);
   if (show) {
-    difficultyBadge.textContent = DIFFICULTY_LABELS[difficulty];
+    difficultyBadge.textContent = difficultyName(difficulty);
   }
 }
 
@@ -863,10 +1105,10 @@ function showSetup() {
   menuMainEl.classList.add('hidden');
   menuSetupEl.classList.remove('hidden');
   restartBtn.classList.remove('hidden');
-  restartBtn.textContent = 'Empezar';
+  restartBtn.textContent = t('setup.start');
   overlayTitle.classList.add('hidden'); // sin título redundante: el "PONG" grande ya está arriba
   overlaySubtitle.classList.remove('hidden');
-  overlaySubtitle.textContent = 'Configura la partida';
+  overlaySubtitle.textContent = t('setup.subtitle');
   overlay.classList.remove('hidden');
 }
 
@@ -889,6 +1131,7 @@ function quitToMenu() {
   resetBall(); // deja la pelota centrada y limpia la estela
   showMainMenu();
   updateDifficultyBadge();
+  touchControlsEl.classList.remove('in-game'); // ocultamos los botones táctiles
 }
 
 function setMode(newMode) {
@@ -918,8 +1161,9 @@ function setMode(newMode) {
 
 function updateScoreLabels() {
   if (mode === 'ai') {
-    label1El.textContent = playerSide === 'left' ? humanName() : 'IA';
-    label2El.textContent = playerSide === 'left' ? 'IA' : humanName();
+    const iaLabel = t('stats.ia');
+    label1El.textContent = playerSide === 'left' ? humanName() : iaLabel;
+    label2El.textContent = playerSide === 'left' ? iaLabel : humanName();
   } else {
     label1El.textContent = player1Name;
     label2El.textContent = player2Name;
@@ -1045,7 +1289,7 @@ function saveStats() {
 }
 
 function resetStats() {
-  if (!confirm('¿Borrar el historial de victorias?')) return;
+  if (!confirm(t('confirm.resetStats'))) return;
   stats = {
     humanWins: 0,
     iaWins: 0,
@@ -1063,13 +1307,13 @@ function resetStats() {
 
 // Restablece todos los ajustes guardados y las estadísticas a sus valores por defecto
 function resetAllSettings() {
-  if (!confirm('¿Restablecer todos los ajustes y estadísticas a los valores por defecto?')) return;
+  if (!confirm(t('confirm.resetAll'))) return;
 
   // 1. Borramos todas las claves guardadas del juego
   try {
     [
       'pong-music-volume', 'pong-effects-volume', 'pong-volume',
-      'pong-music-enabled', 'pong-music-theme', 'pong-stats', 'pong-names',
+      'pong-music-enabled', 'pong-effects-enabled', 'pong-music-theme', 'pong-stats', 'pong-names',
       'pong-color', 'pong-palette', 'pong-theme'
     ].forEach((key) => localStorage.removeItem(key));
   } catch (error) {
@@ -1083,6 +1327,8 @@ function resetAllSettings() {
   savedMusicVolume = 1;
   savedEffectsVolume = 1;
   musicEnabled = true;
+  effectsEnabled = true;
+  effectsVolumeBeforeOff = 1;
   currentTheme = 'clasico';
   paddleColor = '#ffffff';
   palette = 'verde';
@@ -1105,6 +1351,7 @@ function resetAllSettings() {
   musicVolumeSlider.value = '1';
   effectsVolumeSlider.value = '1';
   updateMusicToggleBtn();
+  updateEffectsToggleBtn();
   updateThemeButtons();
   setPaddleColor(paddleColor);
   setPalette(palette);
@@ -1116,7 +1363,7 @@ function resetAllSettings() {
   updateScoreLabels();
   saveStats();
 
-  showToast('Ajustes restablecidos');
+  showToast(t('toast.reset'));
 }
 
 // Pantalla de estadísticas
@@ -1156,6 +1403,15 @@ function openSound() {
 
 function closeSound() {
   soundModal.classList.add('hidden');
+}
+
+function openLanguage() {
+  setPaused(true); // pausa la partida (y detiene la música) si hay una en curso
+  languageModal.classList.remove('hidden');
+}
+
+function closeLanguage() {
+  languageModal.classList.add('hidden');
 }
 
 // Cambia el color de las palas y lo guarda
@@ -1239,14 +1495,14 @@ function renderStats() {
   const iaGames = stats.humanWins + stats.iaWins;
   const iaPct = iaGames === 0 ? 0 : (stats.humanWins / iaGames) * 100;
   statsIaBarEl.style.width = iaPct.toFixed(1) + '%';
-  statsIaLineEl.textContent = `${humanName()} ${stats.humanWins} · IA ${stats.iaWins}`;
+  statsIaLineEl.textContent = `${humanName()} ${stats.humanWins} · ${t('stats.ia')} ${stats.iaWins}`;
   statsIaPercentEl.textContent = iaGames === 0
     ? 'Victorias: —'
     : `Victorias: ${Math.round(iaPct)}%`;
 
-  streakFacilEl.textContent = `Fácil ${stats.bestStreaks.facil}`;
-  streakNormalEl.textContent = `Normal ${stats.bestStreaks.normal}`;
-  streakDificilEl.textContent = `Difícil ${stats.bestStreaks.dificil}`;
+  streakFacilEl.textContent = `${difficultyName('facil')} ${stats.bestStreaks.facil}`;
+  streakNormalEl.textContent = `${difficultyName('normal')} ${stats.bestStreaks.normal}`;
+  streakDificilEl.textContent = `${difficultyName('dificil')} ${stats.bestStreaks.dificil}`;
 
   // Barra de porcentaje en 2 jugadores (verde = victorias del jugador 1).
   const pvpGames = stats.p1Wins + stats.p2Wins;
@@ -1280,6 +1536,7 @@ function startGame() {
   overlay.classList.add('hidden');
   state = 'playing';
   updateDifficultyBadge();
+  touchControlsEl.classList.add('in-game'); // botones táctiles solo durante la partida
   resetBall();
 }
 
@@ -1357,6 +1614,7 @@ function endGame() {
   state = 'gameover';
   updateDifficultyBadge();
   stopBackgroundMusic();
+  touchControlsEl.classList.remove('in-game'); // al terminar, ocultamos los botones táctiles
 
   // ¿Quién ha ganado el enfrentamiento? (en modo IA el jugador humano puede estar en cualquier lado)
   const leftWonMatch = score1 >= bestOf;
@@ -1393,8 +1651,8 @@ function endGame() {
   if (newRecord) {
     // Celebración especial: sonido y mensaje de récord
     playRecord();
-    overlayTitle.textContent = '¡Nuevo récord!';
-    overlaySubtitle.textContent = `Mejor racha en ${DIFFICULTY_LABELS[difficulty]}: ${stats.bestStreaks[difficulty]}`;
+    overlayTitle.textContent = t('game.record');
+    overlaySubtitle.textContent = t('game.bestStreak', { diff: difficultyName(difficulty), n: stats.bestStreaks[difficulty] });
   } else {
     // Sonido de victoria o derrota (solo hay "derrota" jugando contra la IA)
     if (mode === 'ai' && !humanWon) {
@@ -1404,11 +1662,11 @@ function endGame() {
     }
     overlayTitle.textContent =
       mode === 'ai'
-        ? (humanWon ? `¡Has ganado, ${humanName()}!` : '¡La IA gana!')
-        : `¡${humanWon ? player1Name : player2Name} gana!`;
-    overlaySubtitle.textContent = `Resultado: ${score1} - ${score2}`;
+        ? (humanWon ? t('game.win', { name: humanName() }) : t('game.iaWins'))
+        : t('game.playerWins', { name: humanWon ? player1Name : player2Name });
+    overlaySubtitle.textContent = t('game.result', { s1: score1, s2: score2 });
   }
-  restartBtn.textContent = 'Jugar de nuevo';
+  restartBtn.textContent = t('game.playAgain');
   showResultScreen();
   overlay.classList.remove('hidden');
   // Confeti cuando gana un jugador (o el humano contra la IA)
@@ -1434,8 +1692,9 @@ function resetBall() {
 function launchBall() {
   const directionX = serverSide === 'left' ? 1 : -1; // hacia el centro
   const directionY = Math.random() < 0.5 ? -1 : 1; // arriba o abajo
-  ball.vx = directionX * ballSpeed;
-  ball.vy = directionY * ballSpeed * (0.3 + Math.random() * 0.7);
+  const factor = IS_TOUCH_DEVICE ? MOBILE_BALL_FACTOR : 1; // un poco más lenta en móvil
+  ball.vx = directionX * ballSpeed * factor;
+  ball.vy = directionY * ballSpeed * (0.3 + Math.random() * 0.7) * factor;
 
   // No dejamos que el saque supere el tope de velocidad
   const total = Math.hypot(ball.vx, ball.vy);
@@ -1629,8 +1888,12 @@ function bounceOffPaddle(paddle) {
     (ball.y + BALL_SIZE / 2 - (paddle.y + paddleHeight / 2)) / (paddleHeight / 2);
   const maxAngle = Math.PI / 4; // rebote máximo de 45 grados
   const angle = hitPosition * maxAngle;
-  // Cada golpe acelera según la dificultad (speedUp), sin superar el tope máximo
-  const speed = Math.min(Math.hypot(ball.vx, ball.vy) * ballSpeedUp, MAX_BALL_SPEED);
+  // Cada golpe acelera según la dificultad (speedUp), sin superar el tope máximo.
+  // En móvil se aplica el mismo factor de velocidad para que el ritmo baje un poco.
+  const speed = Math.min(
+    Math.hypot(ball.vx, ball.vy) * ballSpeedUp * (IS_TOUCH_DEVICE ? MOBILE_BALL_FACTOR : 1),
+    MAX_BALL_SPEED
+  );
   const direction = ball.vx > 0 ? -1 : 1; // rebota hacia el lado contrario
 
   ball.vx = direction * Math.cos(angle) * speed;
@@ -1760,6 +2023,15 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText(countdown, WIDTH / 2, HEIGHT / 2);
 
+    // En móvil, un pequeño aviso bajo el número: se muestra solo en la primera
+    // cuenta atrás de la partida y desaparece al lanzar la pelota.
+    if (IS_TOUCH_DEVICE && !touchHintShown) {
+      ctx.fillStyle = accentHex();
+      ctx.font = '12px ' + DISPLAY_FONT;
+      ctx.fillText(t('touch.hint'), WIDTH / 2, HEIGHT / 2 + 42);
+      if (countdown === 1) touchHintShown = true;
+    }
+
     // Indicador de quién saca: flecha hacia el centro junto a su pala
     const serving = serverSide === 'left' ? paddle1 : paddle2;
     const dir = serverSide === 'left' ? 1 : -1;
@@ -1776,7 +2048,7 @@ function draw() {
 
     ctx.font = '16px ' + DISPLAY_FONT;
     ctx.textAlign = serverSide === 'left' ? 'left' : 'right';
-    ctx.fillText('SACA', edgeX + dir * 22, cy + 5);
+    ctx.fillText(t('game.serve'), edgeX + dir * 22, cy + 5);
   }
 
   // Pantalla de pausa
@@ -1786,11 +2058,11 @@ function draw() {
     ctx.fillStyle = inkColor();
     ctx.font = '36px ' + DISPLAY_FONT;
     ctx.textAlign = 'center';
-    ctx.fillText('PAUSA', WIDTH / 2, HEIGHT / 2 - 10);
+    ctx.fillText(t('pause.title'), WIDTH / 2, HEIGHT / 2 - 10);
     ctx.font = '18px ' + DISPLAY_FONT;
-    ctx.fillText('Pulsa P para continuar', WIDTH / 2, HEIGHT / 2 + 30);
-    ctx.fillText('ESPACIO para reiniciar', WIDTH / 2, HEIGHT / 2 + 56);
-    ctx.fillText('ESC para salir al menú', WIDTH / 2, HEIGHT / 2 + 82);
+    ctx.fillText(t('pause.continue'), WIDTH / 2, HEIGHT / 2 + 30);
+    ctx.fillText(t('pause.restart'), WIDTH / 2, HEIGHT / 2 + 56);
+    ctx.fillText(t('pause.exit'), WIDTH / 2, HEIGHT / 2 + 82);
   }
 }
 
@@ -1833,6 +2105,7 @@ effectsVolumeSlider.addEventListener('change', () => {
   beep(520, 0.08, 'square', 0.25);
 });
 musicToggleBtn.addEventListener('click', () => setMusicEnabled(!musicEnabled));
+effectsToggleBtn.addEventListener('click', () => setEffectsEnabled(!effectsEnabled));
 name1Input.addEventListener('input', updatePlayerNames);
 name2Input.addEventListener('input', updatePlayerNames);
 name1Input.addEventListener('change', () => { name1Input.value = player1Name; });
@@ -1865,40 +2138,82 @@ bestOf3Btn.addEventListener('click', () => setBestOf(3));
 bestOf5Btn.addEventListener('click', () => setBestOf(5));
 
 // Control táctil por arrastre (también funciona con el ratón).
-// En los eventos solo guardamos la última posición; el movimiento real se aplica
-// una vez por fotograma en applyPointerPaddles(), para no hacer trabajo de más
-// cuando llegan ráfagas de eventos pointermove.
-canvas.addEventListener('pointerdown', (event) => {
-  if (state !== 'playing' || paused) return;
-  const side = getSideForPointer(event.clientX);
-  activePointers[event.pointerId] = side;
-  pointerPositions[event.pointerId] = event.clientY;
-  if (canvas.setPointerCapture) canvas.setPointerCapture(event.pointerId);
-  event.preventDefault();
-});
+// En MÓVIL escuchamos en TODA la ventana (no solo en el tablero): el lienzo
+// (proporción 8:5) es más estrecho que la pantalla y los pulgares descansan en
+// los bordes, fuera del lienzo. Así, en 2 jugadores cada mitad de la PANTALLA
+// controla su pala y los dos pueden jugar a la vez. Se ignoran los botones y
+// controles para no secuestrar sus toques. En escritorio se mantienen los
+// listeners del tablero originales (arrastrar fuera del tablero no hace nada).
+// En los eventos solo guardamos la última posición; el movimiento real se
+// aplica una vez por fotograma en applyPointerPaddles(), para no hacer trabajo
+// de más cuando llegan ráfagas de eventos pointermove.
+const DRAG_IGNORE = 'button, input, select, textarea, a, [role="dialog"]';
+if (IS_TOUCH_DEVICE) {
+  window.addEventListener('pointerdown', (event) => {
+    if (state !== 'playing' || paused) return;
+    if (event.target.closest(DRAG_IGNORE)) return; // no secuestrar botones táctiles
+    const side = getSideForPointer(event.clientX);
+    activePointers[event.pointerId] = side;
+    pointerPositions[event.pointerId] = event.clientY;
+    event.preventDefault();
+  });
 
-canvas.addEventListener('pointermove', (event) => {
-  if (activePointers[event.pointerId] === undefined) return;
-  pointerPositions[event.pointerId] = event.clientY;
-});
+  window.addEventListener('pointermove', (event) => {
+    if (activePointers[event.pointerId] === undefined) return;
+    pointerPositions[event.pointerId] = event.clientY;
+    event.preventDefault(); // evita que el navegador inicie scroll/zoom al arrastrar
+  });
 
-canvas.addEventListener('pointerup', (event) => {
-  delete activePointers[event.pointerId];
-  delete pointerPositions[event.pointerId];
-});
+  window.addEventListener('pointerup', (event) => {
+    if (activePointers[event.pointerId] === undefined) return;
+    delete activePointers[event.pointerId];
+    delete pointerPositions[event.pointerId];
+  });
 
-canvas.addEventListener('pointercancel', (event) => {
-  delete activePointers[event.pointerId];
-  delete pointerPositions[event.pointerId];
-});
+  window.addEventListener('pointercancel', (event) => {
+    if (activePointers[event.pointerId] === undefined) return;
+    delete activePointers[event.pointerId];
+    delete pointerPositions[event.pointerId];
+  });
+} else {
+  stage.addEventListener('pointerdown', (event) => {
+    if (state !== 'playing' || paused) return;
+    const side = getSideForPointer(event.clientX);
+    activePointers[event.pointerId] = side;
+    pointerPositions[event.pointerId] = event.clientY;
+    if (stage.setPointerCapture) stage.setPointerCapture(event.pointerId);
+    event.preventDefault();
+  });
+
+  stage.addEventListener('pointermove', (event) => {
+    if (activePointers[event.pointerId] === undefined) return;
+    pointerPositions[event.pointerId] = event.clientY;
+  });
+
+  stage.addEventListener('pointerup', (event) => {
+    delete activePointers[event.pointerId];
+    delete pointerPositions[event.pointerId];
+  });
+
+  stage.addEventListener('pointercancel', (event) => {
+    delete activePointers[event.pointerId];
+    delete pointerPositions[event.pointerId];
+  });
+}
 
 touchPauseBtn.addEventListener('click', () => togglePause());
 touchMenuBtn.addEventListener('click', quitToMenu);
 
-// Devuelve qué lado controla un toque según su posición y el modo de juego
+// Devuelve qué lado controla un toque según su posición y el modo de juego.
+// En 2 jugadores en móvil, cada mitad de la PANTALLA controla su pala (los
+// dedos pueden estar en los bordes del móvil, fuera del lienzo). En escritorio
+// se divide por el centro del tablero, como antes.
 function getSideForPointer(clientX) {
   if (mode === 'ai') {
     return playerSide; // un solo jugador: cualquier toque mueve tu pala
+  }
+  if (IS_TOUCH_DEVICE) {
+    return clientX < window.innerWidth / 2 ? 'left' : 'right';
   }
   const rect = canvas.getBoundingClientRect();
   return clientX < rect.left + rect.width / 2 ? 'left' : 'right';
@@ -1940,6 +2255,21 @@ soundModal.addEventListener('click', (event) => {
   if (event.target === soundModal) closeSound();
 });
 menuEstadisticasBtn.addEventListener('click', openStats);
+menuIdiomaBtn.addEventListener('click', openLanguage);
+languageCloseBtn.addEventListener('click', closeLanguage);
+languageModal.addEventListener('click', (event) => {
+  if (event.target === languageModal) closeLanguage();
+});
+// Botones de idioma: cambian el idioma y cierran el modal
+['es', 'en'].forEach((code) => {
+  const btn = document.getElementById('lang-' + code);
+  if (btn) {
+    btn.addEventListener('click', () => {
+      setLanguage(code);
+      closeLanguage();
+    });
+  }
+});
 menuJugarBtn.addEventListener('click', showSetup);
 
 // Sonido de clic para todos los botones de la interfaz (menú, configuración y
@@ -2000,6 +2330,21 @@ try {
   // usamos la música encendida por defecto
 }
 updateMusicToggleBtn();
+
+// Recuperar la preferencia de efectos de sonido (encendidos/apagados)
+try {
+  const savedEffectsEnabled = localStorage.getItem('pong-effects-enabled');
+  if (savedEffectsEnabled !== null) effectsEnabled = savedEffectsEnabled === 'true';
+} catch (error) {
+  // usamos los efectos encendidos por defecto
+}
+if (!effectsEnabled) {
+  // Si los efectos estaban apagados, dejamos el volumen a cero
+  effectsVolumeBeforeOff = effectsVolume > 0 ? effectsVolume : 1;
+  effectsVolume = 0;
+  effectsVolumeSlider.value = '0';
+}
+updateEffectsToggleBtn();
 
 // Recuperar el tema musical guardado
 try {
@@ -2199,6 +2544,11 @@ function startSplashLoading() {
   });
 }
 
+// Aplicamos el idioma guardado nada más arrancar (el HTML viene en español por
+// defecto). Va aquí, DESPUÉS de las declaraciones, para no leer variables que
+// aún están en su zona muerta temporal (TDZ).
+applyLanguage();
+
 // Arrancamos la carga del splash aquí, DESPUÉS de las declaraciones anteriores,
 // para no leer variables que aún están en su zona muerta temporal (TDZ).
 startSplashLoading();
@@ -2236,7 +2586,7 @@ installBtn.addEventListener('click', async () => {
   deferredPrompt = null;
   installBtn.classList.add('hidden');
   if (choice.outcome === 'accepted') {
-    showToast('¡Instalando la app…!');
+    showToast(t('toast.installing'));
   }
 });
 
@@ -2244,5 +2594,5 @@ installBtn.addEventListener('click', async () => {
 window.addEventListener('appinstalled', () => {
   deferredPrompt = null;
   installBtn.classList.add('hidden');
-  showToast('¡App instalada!');
+  showToast(t('toast.installed'));
 });

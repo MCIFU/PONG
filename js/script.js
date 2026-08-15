@@ -153,7 +153,7 @@ const TRANSLATIONS = {
     'game.result': 'Resultado: {s1} - {s2}', 'game.playAgain': 'Jugar de nuevo', 'game.serve': 'SACA',
     'pause.title': 'PAUSA', 'pause.continue': 'Pulsa P para continuar',
     'pause.restart': 'ESPACIO para reiniciar', 'pause.exit': 'ESC para salir al menú',
-    'pause.touchContinue': 'Pulsa Pausa para continuar', 'pause.touchRestart': 'Pulsa Reiniciar para empezar de nuevo', 'pause.touchExit': 'Pulsa Casa para salir al menú',
+    'pause.touchContinue': 'Toca en cualquier punto para continuar', 'pause.touchRestart': 'Pulsa Reiniciar para empezar de nuevo', 'pause.touchExit': 'Pulsa Casa para salir al menú',
     'toast.muted': 'Sonido silenciado (M para restaurar)', 'toast.unmuted': 'Sonido restaurado',
     'toast.reset': 'Ajustes restablecidos', 'toast.installing': '¡Instalando la app…!', 'toast.installed': '¡App instalada!',
     'confirm.resetStats': '¿Borrar el historial de victorias?',
@@ -208,7 +208,7 @@ const TRANSLATIONS = {
     'game.result': 'Result: {s1} - {s2}', 'game.playAgain': 'Play again', 'game.serve': 'SERVE',
     'pause.title': 'PAUSE', 'pause.continue': 'Press P to continue',
     'pause.restart': 'SPACE to restart', 'pause.exit': 'ESC to exit to menu',
-    'pause.touchContinue': 'Press Pause to continue', 'pause.touchRestart': 'Press Restart to start over', 'pause.touchExit': 'Press Home for the menu',
+    'pause.touchContinue': 'Tap anywhere to continue', 'pause.touchRestart': 'Press Restart to start over', 'pause.touchExit': 'Press Home for the menu',
     'toast.muted': 'Sound muted (M to restore)', 'toast.unmuted': 'Sound restored',
     'toast.reset': 'Settings reset', 'toast.installing': 'Installing the app…!', 'toast.installed': 'App installed!',
     'confirm.resetStats': 'Delete the win history?',
@@ -450,6 +450,13 @@ let countdown = 0;     // número que se muestra antes del saque (3, 2, 1...)
 let touchHintShown = false; // el aviso táctil solo se muestra en la primera cuenta atrás
 // ¿Es un dispositivo táctil? (se evalúa una vez al cargar, no en cada fotograma)
 const IS_TOUCH_DEVICE = typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
+
+// ¿Debe la interfaz mostrar los controles táctiles? Igual que el CSS de los
+// botones táctiles: dispositivo táctil O ventana estrecha (en pantallas muy
+// pequeñas tampoco hay teclado físico). Se usa para los textos de la pausa.
+function hasTouchUI() {
+  return IS_TOUCH_DEVICE || (typeof matchMedia === 'function' && matchMedia('(max-width: 700px)').matches);
+}
 let aiTargetY = HEIGHT / 2; // a dónde apunta la IA (se actualiza con retraso)
 let aiReactionTimer = 0;    // fotogramas restantes hasta que la IA reaccione
 
@@ -457,6 +464,8 @@ let aiReactionTimer = 0;    // fotogramas restantes hasta que la IA reaccione
 const keys = {};
 const activePointers = {};     // dedos activos sobre el lienzo (pointerId -> lado)
 const pointerPositions = {};   // última posición Y de cada dedo (pointerId -> clientY)
+const pointerStartY = {};      // posición Y inicial de cada dedo al tocar (pointerId -> clientY)
+const paddleStartY = {};       // posición inicial de cada pala al tocar (side -> paddle.y)
 
 document.addEventListener('keydown', (event) => {
   const key = event.key.toLowerCase();
@@ -2057,7 +2066,7 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText(t('pause.title'), WIDTH / 2, HEIGHT / 2 - 10);
     ctx.font = '18px ' + DISPLAY_FONT;
-    if (IS_TOUCH_DEVICE) {
+    if (hasTouchUI()) {
       // En móvil no hay teclado: las instrucciones apuntan a los botones táctiles
       ctx.fillText(t('pause.touchContinue'), WIDTH / 2, HEIGHT / 2 + 30);
       ctx.fillText(t('pause.touchRestart'), WIDTH / 2, HEIGHT / 2 + 56);
@@ -2154,11 +2163,24 @@ bestOf5Btn.addEventListener('click', () => setBestOf(5));
 const DRAG_IGNORE = 'button, input, select, textarea, a, [role="dialog"]';
 if (IS_TOUCH_DEVICE) {
   window.addEventListener('pointerdown', (event) => {
-    if (state !== 'playing' || paused) return;
+    if (state !== 'playing') return;
+    // En pausa, un toque en cualquier punto de la pantalla reanuda la partida
+    if (paused) {
+      if (event.target.closest(DRAG_IGNORE)) return; // los botones táctiles ya gestionan su acción
+      setPaused(false);
+      return;
+    }
     if (event.target.closest(DRAG_IGNORE)) return; // no secuestrar botones táctiles
     const side = getSideForPointer(event.clientX);
     activePointers[event.pointerId] = side;
     pointerPositions[event.pointerId] = event.clientY;
+    // Arrastre RELATIVO: recordamos dónde estaba el dedo y dónde estaba la pala
+    // al tocar, así la pala se mueve con el dedo a partir de su posición, sin
+    // saltos bruscos ni tapando la pala con el pulgar (el toque puede empezar
+    // en cualquier punto de la pantalla, no solo sobre la pala).
+    pointerStartY[event.pointerId] = event.clientY;
+    const paddle = side === 'left' ? paddle1 : paddle2;
+    paddleStartY[side] = paddle.y;
     event.preventDefault();
   });
 
@@ -2172,16 +2194,23 @@ if (IS_TOUCH_DEVICE) {
     if (activePointers[event.pointerId] === undefined) return;
     delete activePointers[event.pointerId];
     delete pointerPositions[event.pointerId];
+    delete pointerStartY[event.pointerId];
   });
 
   window.addEventListener('pointercancel', (event) => {
     if (activePointers[event.pointerId] === undefined) return;
     delete activePointers[event.pointerId];
     delete pointerPositions[event.pointerId];
+    delete pointerStartY[event.pointerId];
   });
 } else {
   stage.addEventListener('pointerdown', (event) => {
-    if (state !== 'playing' || paused) return;
+    if (state !== 'playing') return;
+    // En pausa, un clic en cualquier punto del tablero reanuda la partida
+    if (paused) {
+      setPaused(false);
+      return;
+    }
     const side = getSideForPointer(event.clientX);
     activePointers[event.pointerId] = side;
     pointerPositions[event.pointerId] = event.clientY;
@@ -2228,8 +2257,10 @@ function getSideForPointer(clientX) {
 }
 
 // Aplica la última posición táctil guardada a cada pala, una vez por fotograma.
-// Antes se movía la pala en cada evento pointermove; ahora medimos el lienzo una
-// sola vez y movemos todas las palas a la vez, reduciendo el trabajo del arrastre.
+// En móvil el arrastre es RELATIVO: la pala se desplaza lo mismo que el dedo
+// desde la posición en que empezó el toque (sin saltos al apoyar el pulgar ni
+// tapa la pala). En escritorio se mantiene el arrastre ABSOLUTO original: la
+// pala va al punto del cursor (así lo pediste para el PC).
 function applyPointerPaddles() {
   const ids = Object.keys(activePointers);
   if (ids.length === 0) return;
@@ -2243,8 +2274,18 @@ function applyPointerPaddles() {
     if (clientY === undefined) continue;
     const side = activePointers[id];
     const paddle = side === 'left' ? paddle1 : paddle2;
-    paddle.vel = 0; // el arrastre táctil es control absoluto, sin inercia residual
-    paddle.y = clamp((clientY - rect.top) * scaleY - paddleHeight / 2, 0, HEIGHT - paddleHeight);
+    if (IS_TOUCH_DEVICE) {
+      // Móvil: arrastre relativo
+      const startY = pointerStartY[id];
+      if (startY === undefined) continue;
+      paddle.vel = 0;
+      const baseY = paddleStartY[side] !== undefined ? paddleStartY[side] : paddle.y;
+      paddle.y = clamp(baseY + (clientY - startY) * scaleY, 0, HEIGHT - paddleHeight);
+    } else {
+      // Escritorio: arrastre absoluto (la pala sigue al cursor)
+      paddle.vel = 0;
+      paddle.y = clamp((clientY - rect.top) * scaleY - paddleHeight / 2, 0, HEIGHT - paddleHeight);
+    }
   }
 }
 statsResetBtn.addEventListener('click', resetStats);
@@ -2464,12 +2505,16 @@ const PRELOAD_ASSETS = [
   './assets/icons/icon-512-ios.png'
 ];
 
-const SPLASH_MIN_MS = 1500; // tiempo mínimo visible del splash
+// Tiempo mínimo visible del splash: en móvil dura 1 s más para poder
+// disfrutar de la animación del logo y de la barra de carga (en el escritorio
+// se mantiene el original, más breve).
+const SPLASH_MIN_MS = IS_TOUCH_DEVICE ? 2500 : 1500;
 let splashHidden = false;
 let splashStarted = false;
 let splashProgress = 0;    // 0..1, solo avanza
 let assetsDone = false;    // todos los assets han terminado de cargar
 let minTimeElapsed = false;
+let splashDripTimer = null; // temporizador de la carga visual simulada
 
 function hideSplash() {
   if (splashHidden) return; // evita ejecutar el fundido dos veces
@@ -2485,7 +2530,10 @@ function setSplashProgress(value) {
 }
 
 function maybeFinishSplash() {
-  if (assetsDone && minTimeElapsed) hideSplash();
+  if (assetsDone && minTimeElapsed) {
+    setSplashProgress(1); // completamos la barra antes de desaparecer
+    hideSplash();
+  }
 }
 
 function finishSplashNow() {
@@ -2493,6 +2541,24 @@ function finishSplashNow() {
   minTimeElapsed = true;
   setSplashProgress(1);
   hideSplash();
+}
+
+// Carga visual simulada: aunque los assets ya estén en caché (segunda visita
+// o app instalada) y terminen de cargar al instante, la barra avanza poco a
+// poco hasta el 88 % para que se vea el progreso durante todo el splash. Al
+// terminar, el salto al 100 % llega con la transición CSS (movimiento suave).
+function startSplashDrip() {
+  let dripped = 0;
+  const step = () => {
+    if (splashHidden || splashProgress >= 1) return;
+    if (assetsDone && minTimeElapsed) return; // ya no hace falta simular
+    // Avance desacelerado: empieza rápido y se ralentiza cerca del tope.
+    dripped += (0.88 - dripped) * 0.045 + 0.006;
+    const cap = assetsDone ? 0.98 : 0.88;
+    setSplashProgress(Math.min(cap, dripped));
+    splashDripTimer = setTimeout(step, 60);
+  };
+  splashDripTimer = setTimeout(step, 60);
 }
 
 // Descarga un asset leyendo su flujo de bytes para medir el progreso real.
@@ -2531,6 +2597,8 @@ function startSplashLoading() {
 
   // Tiempo mínimo para disfrutar la animación del logo
   setTimeout(() => { minTimeElapsed = true; maybeFinishSplash(); }, SPLASH_MIN_MS);
+  // Barra de carga visible: avanza suavemente aunque los assets estén en caché
+  startSplashDrip();
   // Red de seguridad: si algo se queda colgado, entramos igualmente.
   setTimeout(finishSplashNow, 8000);
 

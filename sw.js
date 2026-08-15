@@ -9,7 +9,7 @@
 //  - Juego (js/script.js): solo se cachea al instalar. Se sirve desde la caché sin
 //    revalidar, para no gastar datos ni competir por CPU en cada visita.
 
-const CACHE_NAME = 'pong-v87';
+const CACHE_NAME = 'pong-v89';
 
 // Límite de tamaño de la caché (en bytes). Aquí 5 MB.
 // Los assets del juego pesan mucho menos, así que este tope actúa como
@@ -17,8 +17,7 @@ const CACHE_NAME = 'pong-v87';
 const MAX_CACHE_SIZE = 5 * 1024 * 1024;
 
 const ASSETS = [
-  './',
-  './index.html',
+  './', // la página principal (index.html se sirve en esta ruta)
   './css/style.css',
   './js/script.js',
   './assets/fonts/press-start-2p.woff2',

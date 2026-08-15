@@ -1,112 +1,91 @@
-# 🏓 PONG
+# PONG
 
-Pong clásico hecho con **HTML, CSS y JavaScript puro** (sin frameworks ni dependencias). Jugable en el navegador, instalable como PWA y como app de escritorio para Windows.
+Un Pong clásico hecho con HTML, CSS y JavaScript, sin frameworks ni dependencias. Se juega en el navegador, pero también se puede instalar en el móvil como app y en Windows como programa.
 
-> 🎮 1 jugador contra la IA o 2 jugadores, con sonido y música generados por código, estadísticas persistentes y controles táctiles.
+Puedes jugarlo aquí: **[https://mcifu-pong.netlify.app](https://mcifu-pong.netlify.app)**
 
-## ✨ Características
+![Captura del juego](assets/screenshot.png)
 
-- **Modos**: 1 jugador contra la IA (elige lado) o 2 jugadores en el mismo teclado.
-- **Dificultad de la IA**: Fácil, Normal y Difícil (cambia tamaño de pala, velocidad, reacción y error).
-- **Partidas**: al mejor de 1, 3 o 5 puntos, cuenta atrás 3-2-1 y aceleración de la pelota en cada golpe.
-- **Sonido**: efectos y música (3 temas) generados con la Web Audio API, con volúmenes independientes.
-- **Personalización**: color de palas, paleta de color, tema claro/oscuro/sistema y nombres de jugadores.
-- **Estadísticas** guardadas en el dispositivo: partidas, victorias, derrotas, tiempo de juego y rachas.
-- **Plataforma**: PWA instalable, modo sin conexión, splash de carga y efecto CRT integrado.
+## Qué incluye
 
-## 🎮 Controles
+- **Dos modos**: 1 jugador contra la IA (elige tu lado) o 2 jugadores en la misma pantalla.
+- **Tres dificultades** para la IA: Fácil, Normal y Difícil.
+- **Partidas** al mejor de 1, 3 o 5 puntos, con cuenta atrás 3-2-1.
+- **Sonido y música** generados por código (sin archivos), con 3 temas musicales.
+- **Personalización**: color de las palas, tema claro u oscuro y nombres de los jugadores.
+- **Estadísticas** guardadas en el dispositivo: partidas, victorias, derrotas y tiempo de juego.
+- **PWA instalable**: funciona sin conexión, con pantalla de carga y estética arcade.
+
+## Controles
 
 | Acción | Teclado | Táctil |
 |---|---|---|
-| Pala izquierda | `W` / `S` | Arrastrar por la pantalla |
-| Pala derecha | `↑` / `↓` | Arrastrar por la pantalla |
-| Empezar / reiniciar | `ESPACIO` | Botón *Empezar* |
-| Pausar / reanudar | `P` | Botón de pausa |
-| Volver al menú | `ESC` | Botón de volver al menú |
-| Silenciar / restaurar | `M` | Botón de sonido |
+| Pala izquierda | `W` / `S` | Arrastrar el dedo |
+| Pala derecha | `↑` / `↓` | Arrastrar el dedo |
+| Empezar / reiniciar | `ESPACIO` | Botón |
+| Pausar / reanudar | `P` | Botón |
+| Volver al menú | `ESC` | Botón |
+| Silenciar / sonido | `M` | Botón |
 
-## 🚀 Cómo ejecutarlo
+## Cómo ejecutarlo
 
-Puedes abrir `index.html` directamente en el navegador. Para probar la PWA usa un servidor local:
+Abre `index.html` directamente en el navegador. Para probarlo como PWA (instalación, offline), usa el servidor local:
 
 ```bash
 npm start
 ```
 
-Abre `http://localhost:8000`. (Otro puerto: `PORT=8080 npm start`.)
+Y abre `http://localhost:8000`.
 
-## 🌐 Juego en línea
+## Publicación
 
-[https://mcifu-pong.netlify.app](https://mcifu-pong.netlify.app)
+### Google Play (Android)
 
-## 🖥️ App de escritorio (Windows)
+Se publica envolviendo la PWA con [PWABuilder](https://www.pwabuilder.com):
 
-Con [Electron](https://www.electronjs.org/) se genera un instalador `.exe` que funciona sin navegador ni conexión:
+1. Genera el paquete en PWABuilder y descarga el zip.
+2. **Guarda el keystore** (clave de firma) del zip: es imprescindible para actualizar la app en el futuro.
+3. Sube el archivo `.aab` en [Play Console](https://play.google.com/console) y rellena la ficha (textos en `PLAY-STORE.md`).
+4. Las cuentas nuevas requieren una prueba cerrada con 12 testers durante 14 días antes de publicar.
+
+- **Política de privacidad**: https://mcifu-pong.netlify.app/privacy.html
+
+### iOS (iPhone)
+
+- **Sin Mac**: abre `https://mcifu-pong.netlify.app` en Safari → *Compartir* → *Añadir a pantalla de inicio*. Se instala a pantalla completa y funciona sin conexión.
+- **App Store**: genera el paquete iOS en PWABuilder y compílalo con **Xcode** en un Mac (requiere cuenta de desarrollador de Apple, 99 $/año).
+
+### Windows (escritorio)
+
+Con [Electron](https://www.electronjs.org/) se genera un instalador `.exe`:
 
 ```bash
-npm install        # primera vez (descarga Electron)
-npm run dist       # instalador: dist/Pong Setup 1.0.0.exe
-npm run dist:portable  # portable: dist/Pong 1.0.0.exe (un .exe sin instalar)
+npm install
+npm run dist            # instalador en dist/
+npm run dist:portable   # versión portable (un solo .exe)
 ```
 
-Para probarlo sin instalar: `npm run desktop`.
+La app instalada se actualiza sola desde GitHub Releases al publicar una versión nueva.
 
-### Actualizaciones automáticas
+## Tecnologías
 
-La app **instalada** (no la portable) se actualiza sola desde [GitHub Releases](https://github.com/mcifu/pong/releases), configurado en `package.json` → `build.publish`.
+HTML5, CSS3, Canvas 2D y JavaScript vanilla. Web Audio API para el sonido, Service Worker para el modo offline y localStorage para guardar ajustes y estadísticas.
 
-Una **GitHub Action** (`.github/workflows/build.yml`) compila el `.exe` y lo publica en Releases automáticamente al subir un tag:
-
-```bash
-npm version patch   # 1.0.0 → 1.0.1 (crea commit + tag v1.0.1)
-git push
-git push --tags     # dispara la acción: compila y publica el Release
-```
-
-Las **notas del Release** (changelog) se generan solas con los commits desde el tag anterior. También puedes lanzarla a mano desde la pestaña **Actions** → *Compilar y publicar .exe*. Los jugadores recibirán la actualización al abrir el juego (la descarga en segundo plano y se instala al cerrar). Si tu repositorio no es `mcifu/pong`, cambia `owner` y `repo` en `package.json`.
-
-### Firma de código (evita el aviso de SmartScreen)
-
-Para que Windows no muestre *"Windows protegió tu PC"* al descargar el `.exe`, fírmalo con un certificado de código (de pago: DigiCert, Sectigo, SSL.com…). Añade dos secretos al repositorio (*Settings → Secrets and variables → Actions*):
-
-- `WINDOWS_CERTIFICATE_BASE64` — el certificado `.pfx` en base64:
-  ```bash
-  base64 -w0 cert.pfx
-  ```
-- `WINDOWS_CERTIFICATE_PASSWORD` — su contraseña.
-
-La acción firma el `.exe` automáticamente cuando encuentra estos secretos; sin ellos, compila sin firmar.
-
-> **Ojo**: un certificado normal (OV) aún necesita ganar reputación en SmartScreen. Para que deje de avisar **desde la primera descarga**, usa un certificado **EV** o [Azure Trusted Signing](https://learn.microsoft.com/azure/trusted-signing/).
-
-## 🛠️ Tecnologías
-
-HTML5 + CSS3 + Canvas 2D + JavaScript vanilla, con Web Audio API (sonido), Service Worker (offline) y localStorage (ajustes y estadísticas).
-
-## 📁 Estructura
+## Estructura
 
 ```
-.
 ├── index.html              Página principal
 ├── manifest.webmanifest    Configuración de la PWA
 ├── sw.js                   Service worker (caché offline)
 ├── css/style.css           Estilos
 ├── js/script.js            Lógica del juego
 ├── assets/                 Iconos y fuente arcade
-├── electron/               App de escritorio (Electron)
-├── build/                  Iconos .ico (cuadrado y redondeado Win11)
+├── electron/               App de escritorio
+├── build/                  Iconos .ico de Windows
 └── tools/                  Servidor local y generadores de iconos
 ```
 
-## 🧑‍💻 Desarrollo
+## Licencia
 
-- `npm start` — servidor local en `http://localhost:8000`.
-- `npm run desktop` — abre el juego como app de escritorio (Electron).
-- `npm run dist` — genera el instalador `.exe` de Windows en `dist/`.
-- `npm run dist:portable` — genera la versión portable (un `.exe` sin instalar).
-- `npm run icons` — regenera los iconos PNG y el `.ico` de Windows.
-
-## 📄 Licencia
-
-- **Código**: sin licencia asignada por defecto.
+- **Código**: sin licencia asignada.
 - **Fuente *Press Start 2P***: [SIL Open Font License 1.1](https://scripts.sil.org/OFL).

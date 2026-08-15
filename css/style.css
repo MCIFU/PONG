@@ -50,6 +50,13 @@ body {
   background: radial-gradient(circle at 50% 40%, #14142b, #050508);
   color: #f5f5f5;
   font-family: var(--font-ui);
+  /* Sin zoom ni scroll de página en móvil: desactivamos los gestos del
+     navegador (pellizco, doble toque, deslizar) para que los dos dedos del
+     modo 2 jugadores lleguen SIEMPRE como eventos suaves, sin que el navegador
+     intente hacer zoom o "secuestre" el segundo dedo (eso causaba tirones).
+     Los menús recuperan su scroll con touch-action: pan-y más abajo. */
+  touch-action: none;
+  overscroll-behavior: none;
 }
 
 /* Pantalla de bienvenida (splash) de la PWA */
@@ -231,10 +238,12 @@ body {
 }
 
 .score .label {
-  font-size: 0.82rem;
-  font-weight: 700;
+  font-family: var(--font-arcade);
+  font-size: 0.6rem;
+  font-weight: 400;
+  line-height: 1.4;
   text-transform: uppercase;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.06em;
   color: var(--hud-accent);
   text-shadow: 0 0 8px rgba(var(--hud-accent-rgb), 0.5);
 }
@@ -323,8 +332,10 @@ body {
 
 .game-point {
   margin: 0 auto 0.75rem;
-  font-size: 1rem;
-  font-weight: bold;
+  font-family: var(--font-arcade);
+  font-size: 0.7rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
   color: #ffd54a;
   text-shadow: 0 0 10px rgba(255, 213, 74, 0.6);
   animation: game-point-pulse 1.2s ease-in-out infinite;
@@ -460,6 +471,9 @@ canvas {
   overflow-y: auto;
   scrollbar-width: thin;
   -webkit-overflow-scrolling: touch;
+  /* El body tiene touch-action: none (sin zoom); este panel es un contenedor
+     con scroll propio, así que le devolvemos el desplazamiento vertical. */
+  touch-action: pan-y;
 }
 
 .overlay.hidden {
@@ -621,6 +635,40 @@ canvas {
   font-size: 0.9rem;
 }
 
+/* Fila de acciones de la pantalla de configuración:
+   Volver · Empezar · Personalizar, en horizontal con Empezar en el centro. */
+.setup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.setup-actions .button {
+  margin-top: 0;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+/* "Empezar" (centro) destaca un poco más que los secundarios */
+.setup-actions .setup-start {
+  padding: 0.7rem 1.6rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  text-indent: 0.1em;
+}
+
+/* Al pulsar, los tres botones de la fila (Volver · Empezar · Personalizar)
+   se hunden 1px como los del menú principal, para el mismo feedback táctil. */
+.setup-actions .button:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
+}
+
 /* Selector de color de las palas */
 .color-options {
   display: flex;
@@ -661,14 +709,15 @@ kbd {
 }
 
 /* Iconos CSS minimalistas (dibujados con el color del tema, sin emojis).
-   Todos usan currentColor, que hereda de --accent vía la clase .icon. */
+   Usan currentColor para heredar el color del botón que los contiene, así un
+   botón en estado "apagado" (mute/pausa) puede atenuar el icono solo con su color. */
 .icon {
   position: relative;
   display: inline-block;
   flex: none;
   vertical-align: middle;
   line-height: 1;
-  color: var(--accent);
+  color: currentColor;
 }
 
 /* Casa simple (volver al menú): tejado triangular y cuerpo rellenos */
@@ -729,6 +778,119 @@ kbd {
   border-top: 0.15em solid transparent;
   border-bottom: 0.15em solid transparent;
   border-right: 0.26em solid currentColor;
+}
+
+/* Reproducir (triángulo): se muestra en el botón de pausa cuando está en pausa,
+   indicando que al tocarlo se reanuda la partida. */
+.icon-play {
+  width: 1em;
+  height: 1em;
+}
+.icon-play::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 53%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: 0;
+  border-top: 0.38em solid transparent;
+  border-bottom: 0.38em solid transparent;
+  border-left: 0.55em solid currentColor;
+}
+
+/* Altavoz (sonido activado): cuerpo triangular + una onda */
+.icon-sound {
+  width: 1.15em;
+  height: 1em;
+}
+.icon-sound::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0.02em;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 0.32em solid transparent;
+  border-bottom: 0.32em solid transparent;
+  border-right: 0.4em solid currentColor;
+}
+.icon-sound::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0.02em;
+  transform: translateY(-50%);
+  width: 0.3em;
+  height: 0.36em;
+  border: 0.11em solid currentColor;
+  border-left: none;
+  border-radius: 0 0.32em 0.32em 0;
+}
+
+/* Altavoz tachado (silenciado): cuerpo triangular + barra diagonal */
+.icon-mute {
+  width: 1.15em;
+  height: 1em;
+}
+.icon-mute::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0.02em;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 0.32em solid transparent;
+  border-bottom: 0.32em solid transparent;
+  border-right: 0.4em solid currentColor;
+}
+.icon-mute::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  width: 1.2em;
+  height: 0.11em;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* Papelera (borrar historial): tapa y cuerpo. Hereda el rojo del botón. */
+.icon.icon-trash {
+  color: inherit;
+}
+
+.icon-trash {
+  width: 1em;
+  height: 1.05em;
+}
+
+.icon-trash::before {
+  /* tapa */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1em;
+  height: 0.12em;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+.icon-trash::after {
+  /* cuerpo */
+  content: '';
+  position: absolute;
+  left: 0.14em;
+  right: 0.14em;
+  bottom: 0;
+  height: 0.82em;
+  border: 0.12em solid currentColor;
+  border-top: none;
+  border-radius: 0 0 0.15em 0.15em;
 }
 
 /* Nota musical */
@@ -1046,9 +1208,15 @@ button:focus-visible {
 }
 
 /* Retroalimentación al pulsar los botones principales */
-.button:active,
-.mode-button:active {
+.button:active {
   transform: scale(0.97);
+}
+
+/* Los botones de selección (modo, dificultad, lado, puntos) se hunden 1px
+   al pulsarlos, como los del menú, para un feedback táctil coherente. */
+.mode-button:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
 }
 
 /* Utilidad para ocultar elementos */
@@ -1090,6 +1258,35 @@ button:focus-visible {
   box-shadow:
     0 0 0 rgba(var(--accent-rgb), 0.25),
     0 0 20px rgba(var(--accent-rgb), 0.3);
+}
+
+/* Estado "apagado" de los botones táctiles (sonido silenciado o juego en
+   pausa): el icono se atenúa en gris para que se vea de un vistazo. */
+.touch-btn.off {
+  color: #8a8a96;
+  background: rgba(255, 255, 255, 0.03);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+}
+
+.touch-btn.off:active {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+/* Botón táctil "pendiente" (mientras se decide una confirmación, p. ej.
+   reiniciar): se rellena con el acento y late suavemente para indicar que
+   está activo esperando tu decisión. */
+.touch-btn.pending {
+  color: #050508;
+  background: var(--accent);
+  border-color: var(--accent);
+  animation: touch-pending 1.1s ease-in-out infinite;
+}
+
+@keyframes touch-pending {
+  0%, 100% { box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.45); }
+  50%      { box-shadow: 0 0 22px rgba(var(--accent-rgb), 0.85); }
 }
 
 .touch-pause {
@@ -1135,12 +1332,16 @@ button:focus-visible {
 
   /* En móvil el menú (inicio y configuración) ocupa TODA la pantalla, igual
      que los modales: el tablero en retrato es demasiado bajo para el panel de
-     configuración y el contenido se salía. Con pantalla completa siempre cabe. */
+     configuración y el contenido se salía. Con pantalla completa siempre cabe.
+     Fondo opaco: cubre el título y el marcador que quedan detrás, para que
+     "Jugador 1 vs IA" no se transparente bajo "Configurar partida". */
   .overlay {
     position: fixed;
     inset: 0;
     border-radius: 0;
     padding: 12px;
+    background: #0a0a0f;
+    overflow-x: hidden; /* evita desplazamiento horizontal si algo se sale */
   }
 
   /* Menú de configuración compacto en pantallas pequeñas: botones y enlaces
@@ -1153,9 +1354,10 @@ button:focus-visible {
     padding: 0.38rem 0.7rem;
     font-size: 0.78rem;
   }
-  #menu-setup .link-button {
+  .setup-actions .button {
     min-height: auto;
-    padding: 0.2rem 0.4rem;
+    padding: 0.5rem 0.9rem;
+    font-size: 0.8rem;
   }
   .mode-selector,
   .difficulty-selector,
@@ -1241,43 +1443,156 @@ button:focus-visible {
 }
 
 /* Aviso de orientación para móvil */
+/* Aviso a pantalla completa: en móvil el juego solo se juega en horizontal */
 .rotate-hint {
   display: none;
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 10;
+  inset: 0;
+  z-index: 60;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 12px;
-  font-size: 0.9rem;
-  background: rgba(var(--accent-rgb), 0.95);
-  color: #050508;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+  gap: 1.4rem;
+  padding: 2rem;
+  text-align: center;
+  background: radial-gradient(circle at 50% 40%, #14142b, #050508);
+  color: #f5f5f5;
 }
 
-.rotate-hint-close {
-  margin-left: 4px;
-  padding: 0 6px;
-  font-size: 1rem;
-  line-height: 1;
-  font-family: inherit;
-  color: inherit;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+/* Icono: un teléfono que gira de vertical a horizontal */
+.rotate-hint-icon {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  animation: rotate-device 2.4s ease-in-out infinite;
 }
 
-.rotate-hint.dismissed {
-  display: none;
+.rotate-hint-icon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 3px solid var(--accent);
+  border-radius: 12px;
+  box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.5);
 }
 
-/* Solo se muestra en móvil (táctil) y en orientación vertical */
+/* Línea del altavoz en el borde superior */
+.rotate-hint-icon::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
+.rotate-hint-text {
+  margin: 0;
+  max-width: 340px;
+  font-family: var(--font-arcade);
+  font-size: 0.75rem;
+  font-weight: 400;
+  line-height: 1.9;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  text-shadow: 0 0 12px rgba(var(--accent-rgb), 0.5);
+}
+
+@keyframes rotate-device {
+  0%, 12%   { transform: rotate(0deg); }
+  45%, 65%  { transform: rotate(90deg); }
+  88%, 100% { transform: rotate(0deg); }
+}
+
+/* Solo se muestra en móvil (táctil) y en orientación vertical.
+   Si el usuario desbloqueó el modo vertical (body.allow-portrait), el aviso
+   desaparece y se juega directamente en retrato. */
 @media (orientation: portrait) and (hover: none) and (pointer: coarse) {
-  .rotate-hint {
+  body:not(.allow-portrait) .rotate-hint {
     display: flex;
+  }
+}
+
+/* --- Modo vertical desbloqueado: layout optimizado para jugar en retrato.
+       El título PONG se oculta (solo decora) para dar más aire al tablero, y
+       el marcador se compacta. --- */
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+  body.allow-portrait .title {
+    display: none;
+  }
+
+  body.allow-portrait .game {
+    padding-top: calc(6px + env(safe-area-inset-top));
+    padding-bottom: calc(6px + env(safe-area-inset-bottom));
+  }
+
+  /* El marcador flota arriba (como en horizontal) para que se vea también en
+     los menús: en móvil el overlay ocupa toda la pantalla con fondo opaco y
+     taparía un marcador normal. Con position:fixed + z-index queda encima. */
+  body.allow-portrait .scoreboard {
+    position: fixed;
+    top: calc(6px + env(safe-area-inset-top));
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    gap: 0.35rem;
+    margin: 0;
+    width: auto;
+    max-width: calc(100vw - 12px);
+    padding: 0.2rem 0.4rem;
+    background: rgba(10, 10, 15, 0.35);
+    border-radius: 10px;
+  }
+
+  body.light.allow-portrait .scoreboard {
+    background: rgba(255, 255, 255, 0.45);
+  }
+
+  /* Las tarjetas de puntuación se ajustan a su contenido (sin flex-grow).
+     Con "flex: 1" heredado y el marcador a width:auto, algunos navegadores
+     móviles las ensanchan hasta su max-width (240px): el marcador quedaba
+     más ancho que la pantalla y, al estar centrado, solo se veía el "VS". */
+  body.allow-portrait .score {
+    flex: none;
+    width: auto;
+    max-width: none;
+    gap: 0.05rem;
+    padding: 0.1rem 0.45rem 0.2rem;
+  }
+
+  body.allow-portrait .score .value {
+    font-size: 1.6rem;
+  }
+
+  body.allow-portrait .score .label {
+    font-size: 0.55rem;
+    white-space: nowrap;
+    max-width: 12ch;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body.allow-portrait .vs {
+    width: 38px;
+    height: 38px;
+    font-size: 0.6rem;
+  }
+
+  body.allow-portrait .stage {
+    margin: 0 auto;
+  }
+
+  body.allow-portrait .touch-controls {
+    margin-top: 10px;
+  }
+
+  /* El menú a pantalla completa reserva arriba el hueco del marcador flotante
+     para que "Configura la partida" no se superponga con él. */
+  body.allow-portrait .overlay {
+    padding-top: calc(64px + env(safe-area-inset-top));
   }
 }
 
@@ -1392,6 +1707,9 @@ button:focus-visible {
   max-height: 90vh;
   max-height: 90dvh; /* dvh: alto real visible en móvil (sin barra del navegador) */
   overflow-y: auto;
+  /* Los modales también son contenedores con scroll propio: re-habilitamos el
+     desplazamiento vertical pese al touch-action: none del body. */
+  touch-action: pan-y;
   padding: 1.5rem;
   text-align: center;
   background: #14142b;
@@ -1424,6 +1742,7 @@ button:focus-visible {
 
 /* Botones de acción del modal de estadísticas */
 .stats-actions {
+  position: relative; /* ancla para el botón de borrar en la esquina inferior izquierda */
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1435,6 +1754,123 @@ button:focus-visible {
   margin-top: 0;
 }
 
+/* Borrar historial: icono de papelera rojo, apartado de "Cerrar" para evitar
+   pulsarlo por error. */
+.stats-reset {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  font-size: 1.15rem;
+  color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.12);
+  border: 1px solid rgba(255, 107, 107, 0.55);
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 10px rgba(255, 107, 107, 0.15);
+  transition: background 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+}
+
+.stats-reset:hover {
+  background: rgba(255, 107, 107, 0.24);
+  box-shadow: 0 0 14px rgba(255, 107, 107, 0.35);
+  transform: translateY(-1px);
+}
+
+.stats-reset:active {
+  transform: translateY(1px);
+}
+
+/* --- Confirmación visual (diálogo de borrar historial) --- */
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 5, 10, 0.85);
+}
+
+.confirm-modal.hidden {
+  display: none;
+}
+
+.confirm-panel {
+  width: 100%;
+  max-width: 380px;
+  padding: 1.5rem;
+  text-align: center;
+  background: #14142b;
+  border: 1px solid rgba(255, 107, 107, 0.5);
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(255, 107, 107, 0.25);
+}
+
+.confirm-title {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #ff6b6b;
+}
+
+.confirm-message {
+  margin: 0 0 1.1rem;
+  font-size: 0.9rem;
+  color: #e6e6ee;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.confirm-actions .button {
+  margin-top: 0;
+}
+
+/* Botón destructivo (rojo) */
+.confirm-ok {
+  background: #ff6b6b;
+  box-shadow: 0 0 12px rgba(255, 107, 107, 0.5);
+}
+
+.confirm-ok:hover {
+  filter: brightness(1.12);
+}
+
+/* Al pulsar, el botón de confirmar (Borrar/Restablecer) se hunde 1px
+   como el resto de botones del juego. Doble clase para ganar a .button:active. */
+.button.confirm-ok:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
+}
+
+/* Variante ámbar (restablecer): cambia borde, título y botón a tonos dorados */
+.confirm-modal.warning .confirm-panel {
+  border-color: rgba(255, 176, 32, 0.5);
+  box-shadow: 0 0 30px rgba(255, 176, 32, 0.25);
+}
+
+.confirm-modal.warning .confirm-title {
+  color: #ffb020;
+}
+
+.confirm-modal.warning .confirm-ok {
+  background: #ffb020;
+  box-shadow: 0 0 12px rgba(255, 176, 32, 0.5);
+}
+
 .stats-group h3 {
   margin: 0.9rem 0 0.25rem;
   font-family: var(--font-display);
@@ -1442,6 +1878,21 @@ button:focus-visible {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
+}
+
+/* Tarjetas uniformes para "Contra la IA" y "2 jugadores" (solo en Estadísticas) */
+#stats-modal .stats-group {
+  margin-top: 0.9rem;
+  padding: 0.85rem 0.9rem 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(var(--accent-rgb), 0.22);
+  border-radius: 10px;
+  text-align: center; /* todos los textos de la sección centrados */
+}
+
+#stats-modal .stats-group h3 {
+  margin: 0 0 0.5rem;
+  color: var(--accent);
 }
 
 .stats-row {
@@ -1495,26 +1946,6 @@ button:focus-visible {
 .stat-tile-win .stat-value { color: #7dff9a; }
 .stat-tile-loss .stat-value { color: #ff8a8a; }
 
-/* Tarjeta del mejor resultado */
-.stats-best-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.2rem;
-  margin-top: 0.6rem;
-  padding: 0.6rem;
-  background: rgba(255, 213, 74, 0.08);
-  border: 1px solid rgba(255, 213, 74, 0.35);
-  border-radius: 8px;
-}
-
-.stats-best-card .stat-label { color: #ffd54a; }
-
-.stats-best-card .stat-value {
-  color: #ffd54a;
-  text-shadow: 0 0 10px rgba(255, 213, 74, 0.5);
-}
-
 /* Barra de porcentaje de victorias */
 .stat-bar {
   width: 100%;
@@ -1538,6 +1969,7 @@ button:focus-visible {
   margin: 0.15rem 0;
   font-size: 0.85rem;
   color: #e6e6ee;
+  text-align: center;
 }
 
 .stat-bar-percent {
@@ -1661,6 +2093,98 @@ button:focus-visible {
   border-radius: 50%;
 }
 
+/* Texto de las filas de control táctil: título arcade + descripción */
+.ctrl-text {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ctrl-title {
+  font-family: var(--font-arcade);
+  font-size: 0.6rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+/* Icono "2 jugadores": tablero partido en dos mitades con una flecha a cada
+   lado, igual que la pista que se ve durante la cuenta atrás. */
+.icon-halves {
+  width: 1.9em;
+  height: 1.15em;
+  border: 0.12em solid currentColor;
+  border-radius: 4px;
+}
+.icon-halves::before {
+  content: '';
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 50%;
+  border-left: 0.1em dashed currentColor;
+  transform: translateX(-50%);
+}
+.icon-halves .h-half {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-style: normal;
+  line-height: 1;
+  font-family: var(--font-arcade);
+  font-size: 0.6em;
+}
+.icon-halves .h-left { left: 12%; }
+.icon-halves .h-right { right: 12%; }
+
+/* Fila "Botones": rejilla con los 4 botones táctiles y su nombre */
+.ctrl-row-buttons {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.6rem;
+}
+.ctrl-row-buttons .ctrl-title {
+  text-align: center;
+}
+.touch-btn-guide {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.4rem;
+}
+.guide-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+}
+.guide-circle {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--accent);
+  font-size: 1.05rem;
+}
+.guide-label {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0.82;
+}
+
+/* En escritorio el modal de Controles solo muestra el teclado; la sección
+   táctil se oculta y solo aparece en dispositivos táctiles. */
+.controls-touch {
+  display: none;
+}
+
 /* Accesibilidad: si el sistema pide menos movimiento, reducimos las animaciones */
 /* =====================================================================
    OPTIMIZACIÓN PARA MÓVIL (Android e iOS).
@@ -1679,8 +2203,7 @@ button:focus-visible {
   .button,
   .mode-button,
   .link-button,
-  .volume-toggle,
-  .rotate-hint-close {
+  .volume-toggle {
     touch-action: manipulation;
   }
 
@@ -1688,6 +2211,9 @@ button:focus-visible {
      táctiles (arrastrar, botones de pausa y casa). */
   .controls-keyboard {
     display: none;
+  }
+  .controls-touch {
+    display: block;
   }
 
   /* Botones más altos, fáciles de acertar con el pulgar */
@@ -1727,13 +2253,15 @@ button:focus-visible {
     max-width: 280px;
     text-align: center;
   }
-  .link-button {
-    margin-top: 0.2rem;
+  /* La fila Volver · Empezar · Personalizar también compacta */
+  .setup-actions {
+    gap: 0.5rem;
+    margin-top: 0.5rem;
   }
-  /* Los enlaces de configuración también compactos */
-  #menu-setup .link-button {
+  .setup-actions .button {
     min-height: auto;
-    padding: 0.2rem 0.4rem;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.78rem;
   }
 
   /* Respeta el notch de iOS en horizontal (no tapar las palas) */
@@ -1759,7 +2287,9 @@ button:focus-visible {
     align-items: center;
     justify-content: center;
     max-width: 100%;
-    padding-top: 4px;
+    /* Franja superior reservada para el marcador flotante: así el HUD no
+       tapa el tablero ni la pelota al rebotar en la pared superior. */
+    padding-top: 48px;
     padding-bottom: 4px;
   }
 
@@ -1773,50 +2303,50 @@ button:focus-visible {
      todo el hueco a la partida. Se centra arriba, donde el lienzo está libre. */
   .scoreboard {
     position: absolute;
-    top: 6px;
+    top: 5px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 5;
-    gap: 0.4rem;
+    gap: 0.35rem;
     margin: 0;
     width: auto;
-    padding: 0.25rem 0.5rem;
+    padding: 0.2rem 0.4rem;
     background: rgba(10, 10, 15, 0.35);
     border-radius: 10px;
   }
   .score {
     gap: 0.05rem;
-    max-width: 150px;
-    padding: 0.15rem 0.5rem 0.25rem;
+    max-width: 130px;
+    padding: 0.1rem 0.4rem 0.2rem;
   }
   .score .value {
-    font-size: 1.15rem;
+    font-size: 1rem;
     text-shadow:
       1px 1px 0 var(--hud-accent),
       2px 2px 0 var(--hud-accent),
       0 0 10px rgba(var(--hud-accent-rgb), 0.6);
   }
   .score .label {
-    font-size: 0.5rem;
-    letter-spacing: 0.05em;
+    font-size: 0.45rem;
+    letter-spacing: 0.04em;
   }
   .vs {
-    width: 28px;
-    height: 28px;
-    font-size: 0.5rem;
+    width: 24px;
+    height: 24px;
+    font-size: 0.45rem;
   }
   .vs::before {
-    inset: 4px;
+    inset: 3px;
   }
 
   /* Insignias flotantes: dificultad arriba a la derecha, punto de partido abajo */
   .difficulty-badge {
     position: absolute;
-    top: 6px;
+    top: 5px;
     right: calc(8px + env(safe-area-inset-right));
     margin: 0;
-    padding: 0.1rem 0.5rem;
-    font-size: 0.5rem;
+    padding: 0.08rem 0.4rem;
+    font-size: 0.42rem;
     z-index: 5;
   }
   .game-point {
@@ -1825,7 +2355,7 @@ button:focus-visible {
     left: 50%;
     transform: translateX(-50%);
     margin: 0;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
     z-index: 5;
   }
 
@@ -1838,8 +2368,10 @@ button:focus-visible {
      táctiles de abajo (antes reservaba ~140px para el marcador y las
      insignias, que ahora flotan sobre el lienzo). */
   .stage {
-    height: calc(100vh - 58px);
-    height: calc(100dvh - 58px); /* dvh = alto real con la barra del navegador */
+    /* El alto descuenta también la franja del marcador (46px) para que la
+       pelota rebote siempre por debajo del HUD y no se oculte tras él. */
+    height: calc(100vh - 96px);
+    height: calc(100dvh - 96px); /* dvh = alto real con la barra del navegador */
     width: auto;
     max-width: 100%;
     margin: 0 auto;
@@ -1849,22 +2381,29 @@ button:focus-visible {
   /* Controles táctiles compactos (sin el texto de ayuda) */
   .touch-controls {
     margin-top: 2px;
-    gap: 6px;
+    gap: 5px;
   }
   .touch-btn {
-    min-width: 44px;
-    min-height: 44px;
-    font-size: 1.1rem;
+    min-width: 40px;
+    min-height: 40px;
+    font-size: 1rem;
     border-radius: 8px;
   }
   .touch-pause {
-    min-width: 48px;
+    min-width: 44px;
   }
 
-  /* Menús del overlay: compactos para caber en el tablero pequeño */
+  /* Menús a pantalla completa (como en retrato): en horizontal el tablero es
+     muy bajo para la configuración y el contenido se salía. La franja superior
+     reserva el hueco del marcador flotante para que no se superpongan. */
   .overlay {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
     gap: 0.3rem;
-    padding: 4px;
+    /* El padding lateral respeta el notch en los bordes (iPhone en horizontal) */
+    padding: 52px calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left));
+    background: #0a0a0f;
   }
   .overlay-title {
     font-size: 1.4rem;
@@ -1898,9 +2437,10 @@ button:focus-visible {
     font-size: 0.75rem;
   }
 
-  /* Modales: a pantalla casi completa, con margen para el notch */
+  /* Modales (Controles, Estadísticas, Sonido, Personalizar): a pantalla casi
+     completa, con margen lateral que respeta el notch en horizontal. */
   .stats-modal {
-    padding: 6px calc(6px + env(safe-area-inset-right)) 6px calc(6px + env(safe-area-inset-left));
+    padding: 12px calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left));
   }
   .stats-panel {
     max-width: 100%;
@@ -1964,8 +2504,7 @@ body.light .name-input {
 
 body.light .mode-button.selected,
 body.light .button,
-body.light .volume-toggle,
-body.light .rotate-hint {
+body.light .volume-toggle {
   color: #ffffff; /* texto blanco sobre el acento oscuro */
 }
 
@@ -2030,6 +2569,15 @@ body.light .key-sep {
   color: rgba(0, 0, 0, 0.4);
 }
 
+body.light .guide-circle {
+  border-color: rgba(0, 0, 0, 0.25);
+  background: rgba(0, 0, 0, 0.04);
+}
+
+body.light .guide-label {
+  opacity: 0.85;
+}
+
 
 body.light .touch-btn {
   background: rgba(var(--accent-rgb), 0.06);
@@ -2040,6 +2588,18 @@ body.light .touch-btn {
 
 body.light .touch-btn:active {
   background: rgba(var(--accent-rgb), 0.18);
+}
+
+body.light .touch-btn.off {
+  color: #a2a2ad;
+  background: rgba(0, 0, 0, 0.02);
+  border-color: rgba(0, 0, 0, 0.16);
+  box-shadow: none;
+}
+
+/* En modo claro el acento es oscuro: el icono pendiente pasa a blanco */
+body.light .touch-btn.pending {
+  color: #ffffff;
 }
 
 body.light .color-swatch {
@@ -2104,14 +2664,54 @@ body.light .stat-sub {
 body.light .stat-tile-win .stat-value { color: #1d7a35; }
 body.light .stat-tile-loss .stat-value { color: #c62828; }
 
-body.light .stats-best-card {
-  background: rgba(178, 106, 0, 0.08);
-  border-color: rgba(178, 106, 0, 0.35);
+body.light #stats-modal .stats-group {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
 }
 
-body.light .stats-best-card .stat-value {
-  color: #a16207;
-  text-shadow: none;
+body.light .stats-reset {
+  color: #c62828;
+  background: rgba(198, 40, 40, 0.08);
+  border-color: rgba(198, 40, 40, 0.5);
+  box-shadow: none;
+}
+
+body.light .stats-reset:hover {
+  background: rgba(198, 40, 40, 0.16);
+}
+
+body.light .confirm-panel {
+  background: #ffffff;
+  border-color: rgba(198, 40, 40, 0.5);
+  box-shadow: 0 0 30px rgba(198, 40, 40, 0.2);
+}
+
+body.light .confirm-title {
+  color: #c62828;
+}
+
+body.light .confirm-message {
+  color: #33333d;
+}
+
+body.light .confirm-ok {
+  background: #c62828;
+  box-shadow: 0 0 12px rgba(198, 40, 40, 0.4);
+}
+
+body.light .confirm-modal.warning .confirm-panel {
+  border-color: rgba(178, 106, 0, 0.5);
+  box-shadow: 0 0 30px rgba(178, 106, 0, 0.2);
+}
+
+body.light .confirm-modal.warning .confirm-title {
+  color: #b26a00;
+}
+
+body.light .confirm-modal.warning .confirm-ok {
+  background: #b26a00;
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(178, 106, 0, 0.4);
 }
 
 body.light .stat-bar {

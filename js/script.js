@@ -18,6 +18,7 @@ const overlay = document.getElementById('overlay');
 const overlayTitle = document.getElementById('overlay-title');
 const overlaySubtitle = document.getElementById('overlay-subtitle');
 const restartBtn = document.getElementById('restart');
+const setupStartBtn = document.getElementById('setup-start');
 const musicVolumeSlider = document.getElementById('music-volume');
 const effectsVolumeSlider = document.getElementById('effects-volume');
 const musicToggleBtn = document.getElementById('music-toggle');
@@ -25,8 +26,6 @@ const effectsToggleBtn = document.getElementById('effects-toggle');
 const themeClasicoBtn = document.getElementById('theme-clasico');
 const themeEnergeticoBtn = document.getElementById('theme-energetico');
 const themeTranquiloBtn = document.getElementById('theme-tranquilo');
-const rotateHint = document.getElementById('rotate-hint');
-const rotateHintClose = document.getElementById('rotate-hint-close');
 const toastEl = document.getElementById('toast');
 const confettiEl = document.getElementById('confetti');
 const explosionEl = document.getElementById('explosion');
@@ -71,27 +70,32 @@ const paletteRosaBtn = document.getElementById('palette-rosa');
 const themeDarkBtn = document.getElementById('theme-dark');
 const themeLightBtn = document.getElementById('theme-light');
 const themeSystemBtn = document.getElementById('theme-system');
+const orientationLandscapeBtn = document.getElementById('orientation-landscape');
+const orientationPortraitBtn = document.getElementById('orientation-portrait');
 const touchPauseBtn = document.getElementById('touch-pause');
 const touchRestartBtn = document.getElementById('touch-restart');
 const touchMenuBtn = document.getElementById('touch-menu');
+const touchSoundBtn = document.getElementById('touch-sound');
+const touchPauseIcon = document.getElementById('touch-pause-icon');
+const touchSoundIcon = document.getElementById('touch-sound-icon');
 const touchControlsEl = document.getElementById('touch-controls');
 const statsCloseBtn = document.getElementById('stats-close');
 const statsResetBtn = document.getElementById('stats-reset');
 const statsModal = document.getElementById('stats-modal');
+const confirmModal = document.getElementById('confirm-modal');
+const confirmTitleEl = document.getElementById('confirm-title');
+const confirmMessageEl = document.getElementById('confirm-message');
+const confirmOkBtn = document.getElementById('confirm-ok');
+const confirmCancelBtn = document.getElementById('confirm-cancel');
 const statsTotalEl = document.getElementById('stats-total');
 const statsWinsEl = document.getElementById('stats-wins');
 const statsLossesEl = document.getElementById('stats-losses');
 const statsTimeEl = document.getElementById('stats-time');
-const statsBestLineEl = document.getElementById('stats-best-line');
 const statsIaBarEl = document.getElementById('stats-ia-bar');
-const statsIaLineEl = document.getElementById('stats-ia-line');
 const statsIaPercentEl = document.getElementById('stats-ia-percent');
 const streakFacilEl = document.getElementById('streak-facil');
 const streakNormalEl = document.getElementById('streak-normal');
 const streakDificilEl = document.getElementById('streak-dificil');
-const statsPvpBarEl = document.getElementById('stats-pvp-bar');
-const statsPvpLineEl = document.getElementById('stats-pvp-line');
-const statsPvpPercentEl = document.getElementById('stats-pvp-percent');
 const stage = document.querySelector('.stage');
 
 // Tipografías del juego. La arcade está embebida en la PWA (offline).
@@ -115,24 +119,29 @@ const TRANSLATIONS = {
     'setup.side': 'Lado', 'setup.left': 'Izquierda', 'setup.right': 'Derecha',
     'setup.points': 'Puntos para ganar',
     'setup.customize': 'Personalizar', 'setup.back': '← Volver', 'setup.start': 'Empezar',
-    'desc.facil': 'Pala larga. La IA es torpe y falla a menudo.',
-    'desc.normal': 'Pala media. La IA comete algunos errores.',
-    'desc.dificil': 'Pala corta. La IA predice la trayectoria y casi no falla.',
+    'desc.facil': 'Pala larga. La IA es un poco torpe y falla a veces.',
+    'desc.normal': 'Pala media. La IA es equilibrada y comete algunos errores.',
+    'desc.dificil': 'Pala algo más corta. La IA es rápida y precisa.',
     'rotate.hint': 'Gira el móvil a horizontal para jugar mejor',
     'touch.hint': 'Arrastra por el tablero para mover tu pala',
     'touch.pause': 'Pausa', 'touch.restart': 'Reiniciar partida', 'touch.back': 'Volver al menú',
+    'touch.resume': 'Reanudar', 'touch.mute': 'Silenciar sonido', 'touch.unmute': 'Restaurar sonido',
     'gamepoint': '¡Punto de partido!',
     'stats.title': 'Estadísticas', 'stats.total': 'Partidas', 'stats.wins': 'Victorias', 'stats.losses': 'Derrotas',
-    'stats.time': 'Tiempo', 'stats.best': 'Mejor resultado', 'stats.vsIa': 'vs IA', 'stats.againstAi': 'Contra la IA',
-    'stats.streak': 'Mejor racha', 'stats.reset': 'Borrar historial', 'stats.ia': 'IA',
-    'stats.winBarAria': 'Porcentaje de victorias contra la IA', 'stats.pvpBarAria': 'Porcentaje de victorias del jugador 1',
-    'stats.winPct': 'Victorias: {pct}%', 'stats.winPctP1': 'Victorias J1: {pct}%',
+    'stats.time': 'Tiempo', 'stats.vsIa': 'vs IA', 'stats.againstAi': 'Contra la IA',
+    'stats.reset': 'Borrar historial', 'stats.ia': 'IA',
+    'stats.byDifficulty': 'Victorias por dificultad',
+    'stats.winBarAria': 'Porcentaje de victorias contra la IA',
+    'stats.winPct': 'Victorias: {pct}',
     'controls.title': 'Controles', 'controls.keyboard': 'Teclado',
     'controls.ws': 'Pala izquierda (subir / bajar)', 'controls.arrows': 'Pala derecha (subir / bajar)',
     'controls.space': 'Empezar / reiniciar', 'controls.pause': 'Pausar', 'controls.esc': 'Volver al menú',
     'controls.mute': 'Silenciar / restaurar sonido', 'controls.touch': 'Táctil',
     'controls.touchDrag': 'Arrastra por el tablero para mover tu pala',
-    'controls.touchBtns': 'Pausa, reiniciar y volver al menú con los botones táctiles',
+    'controls.touchP1': '1 jugador', 'controls.touchP2': '2 jugadores',
+    'controls.touchP2Desc': 'Cada mitad de la pantalla mueve su pala',
+    'controls.touchButtons': 'Botones',
+    'controls.touchPause': 'Pausa', 'controls.touchRestart': 'Reiniciar', 'controls.touchMenu': 'Menú', 'controls.touchSound': 'Sonido',
     'sound.title': 'Sonido', 'sound.volume': 'Volumen', 'sound.music': 'Música', 'sound.effects': 'Efectos',
     'sound.toggleTitle': 'Encender/apagar la música de fondo', 'sound.effectsToggle': 'Encender/apagar los efectos de sonido', 'sound.theme': 'Tema musical',
     'sound.themeClassic': 'Clásico', 'sound.themeEnergy': 'Energético', 'sound.themeRelax': 'Tranquilo',
@@ -141,13 +150,14 @@ const TRANSLATIONS = {
     'customize.title': 'Personalizar', 'customize.paddleColor': 'Color de las palas', 'customize.names': 'Nombres',
     'customize.palette': 'Tema de color', 'customize.mode': 'Tema (claro / oscuro)',
     'customize.dark': 'Oscuro', 'customize.light': 'Claro', 'customize.system': 'Sistema',
+    'customize.orientation': 'Orientación', 'customize.orientLandscape': 'Horizontal', 'customize.orientPortrait': 'Vertical',
+    'customize.orientDesc': 'Desbloquea el juego en vertical para no tener que girar el móvil.',
     'customize.reset': 'Restablecer', 'customize.resetAll': 'Restablecer todo',
     'customize.resetDesc': 'Vuelve a los valores por defecto: colores, volúmenes, temas y estadísticas.',
     'customize.done': 'Hecho', 'customize.p1': 'Jugador 1', 'customize.p2': 'Jugador 2',
     'customize.p1Aria': 'Nombre del jugador de la izquierda', 'customize.p2Aria': 'Nombre del jugador de la derecha',
     'customize.default': 'Por defecto (sigue el tema)',
     'customize.green': 'Verde', 'customize.blue': 'Azul', 'customize.amber': 'Ámbar', 'customize.pink': 'Rosa',
-    'customize.cyan': 'Cian', 'customize.yellow': 'Amarillo', 'customize.red': 'Rojo',
     'game.win': '¡Has ganado, {name}!', 'game.iaWins': '¡La IA gana!', 'game.playerWins': '¡{name} gana!',
     'game.record': '¡Nuevo récord!', 'game.bestStreak': 'Mejor racha en {diff}: {n}',
     'game.result': 'Resultado: {s1} - {s2}', 'game.playAgain': 'Jugar de nuevo', 'game.serve': 'SACA',
@@ -157,7 +167,10 @@ const TRANSLATIONS = {
     'toast.muted': 'Sonido silenciado (M para restaurar)', 'toast.unmuted': 'Sonido restaurado',
     'toast.reset': 'Ajustes restablecidos', 'toast.installing': '¡Instalando la app…!', 'toast.installed': '¡App instalada!',
     'confirm.resetStats': '¿Borrar el historial de victorias?',
+    'confirm.cannotUndo': 'Esta acción no se puede deshacer.', 'confirm.cancel': 'Cancelar', 'confirm.delete': 'Borrar',
     'confirm.resetAll': '¿Restablecer todos los ajustes y estadísticas a los valores por defecto?',
+    'confirm.quitTitle': '¿Salir de la partida?', 'confirm.quitMessage': 'Se perderá el progreso de esta partida.', 'confirm.quitOk': 'Salir',
+    'confirm.restartTitle': '¿Reiniciar la partida?', 'confirm.restartMessage': 'Se perderá el progreso actual de la partida.', 'confirm.restartOk': 'Reiniciar',
     'time.h': 'h', 'time.min': 'min', 'time.s': 's'
   },
   en: {
@@ -170,24 +183,29 @@ const TRANSLATIONS = {
     'setup.side': 'Side', 'setup.left': 'Left', 'setup.right': 'Right',
     'setup.points': 'Points to win',
     'setup.customize': 'Customize', 'setup.back': '← Back', 'setup.start': 'Start',
-    'desc.facil': 'Long paddle. The AI is clumsy and often misses.',
-    'desc.normal': 'Medium paddle. The AI makes some mistakes.',
-    'desc.dificil': 'Short paddle. The AI predicts the trajectory and almost never misses.',
+    'desc.facil': 'Long paddle. The AI is a bit clumsy and sometimes misses.',
+    'desc.normal': 'Medium paddle. The AI is balanced and makes some mistakes.',
+    'desc.dificil': 'Slightly shorter paddle. The AI is fast and precise.',
     'rotate.hint': 'Turn your phone sideways for a better experience',
     'touch.hint': 'Drag on the board to move your paddle',
     'touch.pause': 'Pause', 'touch.restart': 'Restart match', 'touch.back': 'Back to menu',
+    'touch.resume': 'Resume', 'touch.mute': 'Mute sound', 'touch.unmute': 'Restore sound',
     'gamepoint': 'Match point!',
     'stats.title': 'Statistics', 'stats.total': 'Games', 'stats.wins': 'Wins', 'stats.losses': 'Losses',
-    'stats.time': 'Time', 'stats.best': 'Best result', 'stats.vsIa': 'vs AI', 'stats.againstAi': 'Against the AI',
-    'stats.streak': 'Best streak', 'stats.reset': 'Clear history', 'stats.ia': 'AI',
-    'stats.winBarAria': 'Percentage of wins against the AI', 'stats.pvpBarAria': 'Percentage of wins for player 1',
-    'stats.winPct': 'Wins: {pct}%', 'stats.winPctP1': 'Player 1 wins: {pct}%',
+    'stats.time': 'Time', 'stats.vsIa': 'vs AI', 'stats.againstAi': 'Against the AI',
+    'stats.reset': 'Clear history', 'stats.ia': 'AI',
+    'stats.byDifficulty': 'Wins by difficulty',
+    'stats.winBarAria': 'Percentage of wins against the AI',
+    'stats.winPct': 'Wins: {pct}',
     'controls.title': 'Controls', 'controls.keyboard': 'Keyboard',
     'controls.ws': 'Left paddle (up / down)', 'controls.arrows': 'Right paddle (up / down)',
     'controls.space': 'Start / restart', 'controls.pause': 'Pause', 'controls.esc': 'Back to menu',
     'controls.mute': 'Mute / restore sound', 'controls.touch': 'Touch',
     'controls.touchDrag': 'Drag on the board to move your paddle',
-    'controls.touchBtns': 'Pause, restart and return to menu with the touch buttons',
+    'controls.touchP1': '1 player', 'controls.touchP2': '2 players',
+    'controls.touchP2Desc': 'Each half of the screen moves its paddle',
+    'controls.touchButtons': 'Buttons',
+    'controls.touchPause': 'Pause', 'controls.touchRestart': 'Restart', 'controls.touchMenu': 'Menu', 'controls.touchSound': 'Sound',
     'sound.title': 'Sound', 'sound.volume': 'Volume', 'sound.music': 'Music', 'sound.effects': 'Effects',
     'sound.toggleTitle': 'Turn background music on/off', 'sound.effectsToggle': 'Turn sound effects on/off', 'sound.theme': 'Music theme',
     'sound.themeClassic': 'Classic', 'sound.themeEnergy': 'Energetic', 'sound.themeRelax': 'Relaxing',
@@ -196,13 +214,14 @@ const TRANSLATIONS = {
     'customize.title': 'Customize', 'customize.paddleColor': 'Paddle color', 'customize.names': 'Names',
     'customize.palette': 'Color theme', 'customize.mode': 'Theme (light / dark)',
     'customize.dark': 'Dark', 'customize.light': 'Light', 'customize.system': 'System',
+    'customize.orientation': 'Orientation', 'customize.orientLandscape': 'Landscape', 'customize.orientPortrait': 'Portrait',
+    'customize.orientDesc': 'Unlock portrait play so you don\'t have to rotate the phone.',
     'customize.reset': 'Reset', 'customize.resetAll': 'Reset everything',
     'customize.resetDesc': 'Restores default values: colors, volumes, themes and statistics.',
     'customize.done': 'Done', 'customize.p1': 'Player 1', 'customize.p2': 'Player 2',
     'customize.p1Aria': 'Name of the left player', 'customize.p2Aria': 'Name of the right player',
     'customize.default': 'Default (follows theme)',
     'customize.green': 'Green', 'customize.blue': 'Blue', 'customize.amber': 'Amber', 'customize.pink': 'Pink',
-    'customize.cyan': 'Cyan', 'customize.yellow': 'Yellow', 'customize.red': 'Red',
     'game.win': 'You won, {name}!', 'game.iaWins': 'The AI wins!', 'game.playerWins': '{name} wins!',
     'game.record': 'New record!', 'game.bestStreak': 'Best streak in {diff}: {n}',
     'game.result': 'Result: {s1} - {s2}', 'game.playAgain': 'Play again', 'game.serve': 'SERVE',
@@ -212,7 +231,10 @@ const TRANSLATIONS = {
     'toast.muted': 'Sound muted (M to restore)', 'toast.unmuted': 'Sound restored',
     'toast.reset': 'Settings reset', 'toast.installing': 'Installing the app…!', 'toast.installed': 'App installed!',
     'confirm.resetStats': 'Delete the win history?',
+    'confirm.cannotUndo': 'This action cannot be undone.', 'confirm.cancel': 'Cancel', 'confirm.delete': 'Delete',
     'confirm.resetAll': 'Reset all settings and statistics to default values?',
+    'confirm.quitTitle': 'Leave the match?', 'confirm.quitMessage': 'Your progress in this match will be lost.', 'confirm.quitOk': 'Leave',
+    'confirm.restartTitle': 'Restart the match?', 'confirm.restartMessage': 'Your current progress in this match will be lost.', 'confirm.restartOk': 'Restart',
     'time.h': 'h', 'time.min': 'min', 'time.s': 's'
   }
 };
@@ -264,6 +286,8 @@ function applyLanguage() {
   // Textos generados por JavaScript
   if (typeof updateScoreLabels === 'function') updateScoreLabels();
   if (typeof updateDifficultyBadge === 'function') updateDifficultyBadge();
+  if (typeof updatePauseButton === 'function') updatePauseButton();
+  if (typeof updateSoundButton === 'function') updateSoundButton();
   if (typeof difficultyDescEl !== 'undefined' && difficultyDescEl) {
     difficultyDescEl.textContent = t('desc.' + difficulty);
   }
@@ -272,7 +296,7 @@ function applyLanguage() {
     if (state === 'setup') overlaySubtitle.textContent = t('setup.subtitle');
   }
   if (restartBtn) {
-    restartBtn.textContent = state === 'gameover' ? t('game.playAgain') : t('setup.start');
+    restartBtn.textContent = t('game.playAgain');
   }
 }
 
@@ -343,7 +367,9 @@ function scheduleResize() {
 const PADDLE_WIDTH = 12;
 const PADDLE_SPEED = 6;        // velocidad de las palas
 const BALL_SIZE = 12;
-const MAX_BALL_SPEED = 11;     // tope de velocidad total (deja margen para que cada golpe acelere)
+const MAX_BALL_SPEED = 13;     // tope normal de velocidad (los rallies se aceleran hasta aquí)
+const RALLY_MAX_SPEED = 15;    // techo absoluto: solo se alcanza si un rally no termina
+const RALLY_EXTRA_SPEED = 0.5;  // subida extra por golpe una vez alcanzado el tope
 const TRAIL_LENGTH = 12;       // longitud de la estela de la pelota
 const SHADOW_OFFSET = 2;       // desplazamiento (px lógicos) de la sombra dura de palas y pelota
 const AI_ACCEL = 0.22;         // inercia de la IA: cuánto acelera/frena su velocidad por fotograma
@@ -352,16 +378,16 @@ const PADDLE_ACCEL = 0.5;      // pequeña aceleración de las palas por teclado
 
 // Ajustes según la dificultad elegida
 const DIFFICULTY = {
-  // La pelota empieza a un ritmo vivo pero sin pasarse (más rápido que el
-  // original, algo más lento que antes del ajuste). Lo que cambia entre
-  // dificultades es el tamaño de la pala y lo torpe/precisa que es la IA.
-  // `speedUp` acelera la bola con cada golpe de pala: rallies cada vez más rápidos.
-  facil:   { paddleHeight: 120, ballSpeed: 5.5, aiSpeed: 3, speedUp: 1.06, reactionDelay: 25, aimError: 40, reactionJitter: 1.0,
-             description: 'Pala larga. La IA es torpe y falla a menudo.' },
-  normal:  { paddleHeight: 100, ballSpeed: 6,   aiSpeed: 5, speedUp: 1.08, reactionDelay: 10, aimError: 20, reactionJitter: 0.6,
-             description: 'Pala media. La IA comete algunos errores.' },
-  dificil: { paddleHeight: 70,  ballSpeed: 7.5, aiSpeed: 7, speedUp: 1.10, reactionDelay: 2,  aimError: 5,  reactionJitter: 0.2,
-             description: 'Pala corta. La IA predice la trayectoria y casi no falla.' },
+  // La pelota empieza a un ritmo vivo y acelera con cada golpe (speedUp) hasta
+  // el tope MAX_BALL_SPEED: rallies cada vez más rápidos. La dificultad cambia
+  // sobre todo el tamaño de la pala y lo rápida/precisa que es la IA.
+  facil:   { paddleHeight: 120, ballSpeed: 5.5,  aiSpeed: 4.5,  speedUp: 1.08, reactionDelay: 18, aimError: 30, reactionJitter: 0.8,
+             description: 'Pala larga. La IA es un poco torpe y falla a veces.' },
+  // Intermedio exacto entre Fácil y Difícil.
+  normal:  { paddleHeight: 110, ballSpeed: 5.75, aiSpeed: 5.25, speedUp: 1.09, reactionDelay: 13, aimError: 22, reactionJitter: 0.6,
+             description: 'Pala media. La IA es equilibrada y comete algunos errores.' },
+  dificil: { paddleHeight: 100, ballSpeed: 6,    aiSpeed: 6,    speedUp: 1.10, reactionDelay: 7,  aimError: 13, reactionJitter: 0.45,
+             description: 'Pala algo más corta. La IA es rápida y precisa.' },
 };
 
 // Estos valores cambian al elegir la dificultad
@@ -378,13 +404,17 @@ let paddleColor = '#ffffff'; // color de las palas (personalizable)
 // Cada paleta tiene su versión neón (modo oscuro) y una variante más oscura
 // y saturada para el modo claro, igual que las variables CSS --accent.
 const PALETTES = {
-  verde: { label: 'Verde', hex: '#7cfc00', rgb: '124, 252, 0', lightHex: '#14802a', lightRgb: '20, 128, 42' },
-  azul:  { label: 'Azul',  hex: '#4da6ff', rgb: '77, 166, 255', lightHex: '#0f5fcf', lightRgb: '15, 95, 207' },
-  ambar: { label: 'Ámbar', hex: '#ffb020', rgb: '255, 176, 32', lightHex: '#b85e00', lightRgb: '184, 94, 0' },
-  rosa:  { label: 'Rosa',  hex: '#ff4dd8', rgb: '255, 77, 216', lightHex: '#d21f66', lightRgb: '210, 31, 102' },
+  // "overdrive" es el tono "caliente" de cada paleta: la estela y el halo se
+  // mezclan hacia él cuando la bola supera el tope normal de velocidad.
+  // "overdriveLight" es la variante oscura y saturada para el tema claro.
+  verde: { label: 'Verde', hex: '#7cfc00', rgb: '124, 252, 0', lightHex: '#14802a', lightRgb: '20, 128, 42', overdrive: '255, 200, 60', overdriveLight: '180, 83, 9' },
+  azul:  { label: 'Azul',  hex: '#4da6ff', rgb: '77, 166, 255', lightHex: '#0f5fcf', lightRgb: '15, 95, 207', overdrive: '80, 220, 255', overdriveLight: '0, 121, 140' },
+  ambar: { label: 'Ámbar', hex: '#ffb020', rgb: '255, 176, 32', lightHex: '#b85e00', lightRgb: '184, 94, 0', overdrive: '255, 90, 30', overdriveLight: '194, 65, 12' },
+  rosa:  { label: 'Rosa',  hex: '#ff4dd8', rgb: '255, 77, 216', lightHex: '#d21f66', lightRgb: '210, 31, 102', overdrive: '255, 70, 70', overdriveLight: '186, 26, 32' },
 };
 let palette = 'verde'; // paleta de color seleccionada
 let theme = 'system'; // tema de la interfaz: 'dark' | 'light' | 'system' (sigue al SO)
+let allowPortrait = false; // permite jugar en vertical (por defecto se pide girar el móvil)
 
 // Color de acento según el tema efectivo: neón en oscuro, variante oscura en claro
 function accentHex() {
@@ -394,6 +424,12 @@ function accentHex() {
 function accentRgb() {
   const p = PALETTES[palette];
   return resolvedTheme() === 'light' ? p.lightRgb : p.rgb;
+}
+// Tono "caliente" de la paleta para el overdrive, según el tema: en claro usa
+// la variante oscura y saturada para que se distinga sobre el tablero claro.
+function overdriveRgb() {
+  const p = PALETTES[palette];
+  return resolvedTheme() === 'light' ? p.overdriveLight : p.overdrive;
 }
 
 // Fondo del tablero e "tinta" (pelota, palas por defecto, textos) según el tema.
@@ -405,8 +441,28 @@ function inkColor() {
   return resolvedTheme() === 'light' ? '#1a1a24' : '#ffffff';
 }
 // Color de las palas: el color por defecto (#ffffff) sigue el tema; los personalizados se mantienen.
+// Si el color elegido coincide con una paleta, en tema claro se usa su variante
+// oscura y saturada (lightHex) para que siga viéndose sobre el tablero claro.
 function paddleFillColor() {
-  return paddleColor === '#ffffff' ? inkColor() : paddleColor;
+  if (paddleColor === '#ffffff') return inkColor();
+  if (resolvedTheme() === 'light') {
+    for (const key of Object.keys(PALETTES)) {
+      if (PALETTES[key].hex === paddleColor) return PALETTES[key].lightHex;
+    }
+  }
+  return paddleColor;
+}
+// Aclara un color hexadecimal hacia el blanco (amount de 0 a 1).
+function lightenHex(hex, amount) {
+  const n = parseInt(hex.slice(1), 16);
+  const r = Math.round(((n >> 16) & 255) + (255 - ((n >> 16) & 255)) * amount);
+  const g = Math.round(((n >> 8) & 255) + (255 - ((n >> 8) & 255)) * amount);
+  const b = Math.round((n & 255) + (255 - (n & 255)) * amount);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+// Contorno de las palas: un tono más claro del relleno, para que se vea un borde sutil.
+function paddleOutlineColor() {
+  return lightenHex(paddleFillColor(), 0.42);
 }
 // Sombra dura estilo píxel (un rectángulo sólido desplazado, sin desenfoque).
 // En tablero claro: negro translúcido (clásico). En tablero oscuro: gris medio
@@ -420,6 +476,21 @@ const paddle1 = { x: 30, y: HEIGHT / 2 - paddleHeight / 2, vel: 0 };
 const paddle2 = { x: WIDTH - 30 - PADDLE_WIDTH, y: HEIGHT / 2 - paddleHeight / 2, vel: 0 };
 const ball = { x: WIDTH / 2 - BALL_SIZE / 2, y: HEIGHT / 2 - BALL_SIZE / 2, vx: 0, vy: 0 };
 const trail = []; // posiciones anteriores de la pelota para dibujar la estela
+let overspeedHits = 0; // golpes seguidos una vez alcanzado el tope de velocidad
+
+// Posiciones "anteriores" para interpolar el dibujado entre pasos de lógica:
+// así el movimiento se ve suave incluso si el navegador dibuja a pocos FPS.
+let prevBallX = ball.x, prevBallY = ball.y;
+let prevPaddle1Y = paddle1.y, prevPaddle2Y = paddle2.y;
+let renderAlpha = 0; // fracción (0..1) del paso actual usada para interpolar
+
+// Sincroniza las posiciones anteriores con las actuales (tras un reinicio o salto).
+function syncRenderState() {
+  prevBallX = ball.x;
+  prevBallY = ball.y;
+  prevPaddle1Y = paddle1.y;
+  prevPaddle2Y = paddle2.y;
+}
 
 let score1 = 0;
 let score2 = 0;
@@ -430,11 +501,10 @@ let stats = {
   iaWins: 0,      // victorias de la IA
   p1Wins: 0,      // victorias del Jugador 1 (modo 2 jugadores)
   p2Wins: 0,      // victorias del Jugador 2 (modo 2 jugadores)
-  bestMargin: 0,   // mayor diferencia de puntos en una sola partida
-  bestResult: '—', // marcador de esa mejor partida (ej. "5-0")
   playTimeMs: 0,   // tiempo total de juego (en milisegundos)
   streaks: { facil: 0, normal: 0, dificil: 0 },     // racha actual por dificultad
-  bestStreaks: { facil: 0, normal: 0, dificil: 0 }  // mejor racha por dificultad
+  bestStreaks: { facil: 0, normal: 0, dificil: 0 }, // mejor racha por dificultad
+  winsByDifficulty: { facil: 0, normal: 0, dificil: 0 } // victorias totales por dificultad
 };
 let mode = 'ai';       // 'ai' = 1 jugador contra la IA | 'pvp' = 2 jugadores (por defecto: vs IA)
 let difficulty = 'normal'; // dificultad del juego: 'facil' | 'normal' | 'dificil'
@@ -447,6 +517,7 @@ let state = 'start';   // 'start' = menú principal | 'setup' = configuración |
 let paused = false;    // true mientras el juego está en pausa
 let launchTimer = 0;   // fotogramas restantes hasta el siguiente número de la cuenta atrás
 let countdown = 0;     // número que se muestra antes del saque (3, 2, 1...)
+let resumeCountdown = false; // true cuando la cuenta atrás es para reanudar tras una pausa
 let touchHintShown = false; // el aviso táctil solo se muestra en la primera cuenta atrás
 // ¿Es un dispositivo táctil? (se evalúa una vez al cargar, no en cada fotograma)
 const IS_TOUCH_DEVICE = typeof matchMedia === 'function' && matchMedia('(hover: none) and (pointer: coarse)').matches;
@@ -495,8 +566,10 @@ document.addEventListener('keydown', (event) => {
   }
 
   if (key === 'escape') {
-    // ESC cierra modales o vuelve al menú
-    if (!statsModal.classList.contains('hidden')) {
+    // ESC cierra el diálogo de confirmación primero, luego modales o menú
+    if (!confirmModal.classList.contains('hidden')) {
+      closeConfirm();
+    } else if (!statsModal.classList.contains('hidden')) {
       closeStats();
     } else if (!controlsModal.classList.contains('hidden')) {
       closeControls();
@@ -516,8 +589,8 @@ document.addEventListener('keyup', (event) => {
 
 // 5. Sonido (Web Audio API)
 let audioCtx = null;
-let musicVolume = 1;   // volumen de las melodías (victoria/derrota/récord)
-let effectsVolume = 1; // volumen de los efectos (rebotes, puntos, pausa)
+let musicVolume = 1;   // volumen de la música de fondo (bucle de ambiente)
+let effectsVolume = 1; // volumen de los efectos (rebotes, puntos, pausa, victoria/derrota/récord)
 let muted = false;            // true mientras el sonido está silenciado con la tecla M
 let savedMusicVolume = 1;     // volumen de música antes de silenciar
 let savedEffectsVolume = 1;   // volumen de efectos antes de silenciar
@@ -622,27 +695,28 @@ function playScore() {
 }
 
 function playWin() {
-  // Melodía ascendente (Do-Mi-Sol-Do)
-  beep(523, 0.14, 'square', 0.22, 0, 'music');
-  beep(659, 0.14, 'square', 0.22, 0.15, 'music');
-  beep(784, 0.18, 'square', 0.22, 0.30, 'music');
-  beep(1047, 0.25, 'square', 0.26, 0.45, 'music');
+  // Melodía ascendente (Do-Mi-Sol-Do). Sigue el volumen de EFECTOS, no el de
+  // música: es un aviso de partida, no música de fondo.
+  beep(523, 0.14, 'square', 0.22, 0, 'effect');
+  beep(659, 0.14, 'square', 0.22, 0.15, 'effect');
+  beep(784, 0.18, 'square', 0.22, 0.30, 'effect');
+  beep(1047, 0.25, 'square', 0.26, 0.45, 'effect');
 }
 
 function playLose() {
-  // Melodía descendente (Sol-Mi-Do)
-  beep(392, 0.16, 'sawtooth', 0.2, 0, 'music');
-  beep(330, 0.16, 'sawtooth', 0.2, 0.18, 'music');
-  beep(262, 0.28, 'sawtooth', 0.2, 0.36, 'music');
+  // Melodía descendente (Sol-Mi-Do), también con el volumen de efectos.
+  beep(392, 0.16, 'sawtooth', 0.2, 0, 'effect');
+  beep(330, 0.16, 'sawtooth', 0.2, 0.18, 'effect');
+  beep(262, 0.28, 'sawtooth', 0.2, 0.36, 'effect');
 }
 
-// Melodía de celebración al batir un récord
+// Melodía de celebración al batir un récord (volumen de efectos).
 function playRecord() {
-  beep(523, 0.1, 'square', 0.25, 0, 'music');      // Do
-  beep(659, 0.1, 'square', 0.25, 0.12, 'music');   // Mi
-  beep(784, 0.1, 'square', 0.25, 0.24, 'music');   // Sol
-  beep(1047, 0.15, 'square', 0.3, 0.36, 'music');  // Do agudo
-  beep(1319, 0.25, 'square', 0.3, 0.50, 'music');  // Mi agudo
+  beep(523, 0.1, 'square', 0.25, 0, 'effect');      // Do
+  beep(659, 0.1, 'square', 0.25, 0.12, 'effect');   // Mi
+  beep(784, 0.1, 'square', 0.25, 0.24, 'effect');   // Sol
+  beep(1047, 0.15, 'square', 0.3, 0.36, 'effect');  // Do agudo
+  beep(1319, 0.25, 'square', 0.3, 0.50, 'effect');  // Mi agudo
 }
 
 // Música de fondo: varios temas generados con osciladores (melodía + bajo)
@@ -746,7 +820,9 @@ let musicTimer = null; // temporizador que programa las notas por adelantado
 
 // Empieza la música de fondo (solo si el audio está disponible y está activada)
 function startBackgroundMusic() {
-  if (!musicEnabled || musicOn || !audioCtx) return;
+  if (!musicEnabled || musicOn) return;
+  ensureAudio(); // crea/reanuda el contexto de audio (necesario tras volver a primer plano)
+  if (!audioCtx) return;
   stopMusicPreview(); // si había una vista previa sonando, la cortamos
   musicOn = true;
   musicGain = audioCtx.createGain();
@@ -837,6 +913,7 @@ function handleVolumeChange() {
   musicVolume = Number(musicVolumeSlider.value);
   effectsVolume = Number(effectsVolumeSlider.value);
   muted = false; // al mover un deslizador salimos del modo silencio
+  updateSoundButton();
   // El deslizador también sirve para quitar el volumen: sincronizamos el botón ON/OFF
   effectsEnabled = effectsVolume > 0;
   updateEffectsToggleBtn();
@@ -995,6 +1072,7 @@ function toggleMute() {
   effectsEnabled = effectsVolume > 0;
   updateEffectsToggleBtn();
   if (musicGain) musicGain.gain.value = musicVolume * MUSIC_GAIN;
+  updateSoundButton(); // sincroniza el botón táctil de sonido
   showToast(muted ? t('toast.muted') : t('toast.unmuted'));
 }
 
@@ -1065,9 +1143,52 @@ function speedIntensity(speed) {
   return 0.5 + ratio; // 0.5 … 1.5
 }
 
+// Fracción 0..1 de "sobrecalentamiento": cuánto ha superado la bola el tope normal.
+function overdriveFactor(speed) {
+  if (speed <= MAX_BALL_SPEED) return 0;
+  return clamp((speed - MAX_BALL_SPEED) / (RALLY_MAX_SPEED - MAX_BALL_SPEED), 0, 1);
+}
+
+// Mezcla un color "r, g, b" hacia el tono "caliente" de la paleta actual,
+// según la intensidad del sobrecalentamiento (0 = color original, 1 = caliente).
+function mixOverdrive(rgbString, over) {
+  const target = overdriveRgb().split(',').map(Number);
+  const [r, g, b] = rgbString.split(',').map(Number);
+  const rr = Math.round(r + (target[0] - r) * over);
+  const gg = Math.round(g + (target[1] - g) * over);
+  const bb = Math.round(b + (target[2] - b) * over);
+  return `${rr}, ${gg}, ${bb}`;
+}
+
 function handleSpace() {
   // ESPACIO empieza la partida desde el menú o la configuración, y la reinicia
   // tanto en plena partida como en pausa.
+  requestRestart();
+}
+
+// Reinicia la partida. Si hay una en curso, pide confirmación antes de reiniciar.
+function requestRestart() {
+  if (state === 'playing') {
+    // Congela la partida mientras decides; al cancelar se reanuda con cuenta atrás 3-2-1.
+    if (!paused) setPaused(true);
+    // Estado visual del botón de reiniciar mientras el diálogo está abierto.
+    touchRestartBtn.classList.add('pending');
+    openConfirm(
+      t('confirm.restartTitle'),
+      t('confirm.restartMessage'),
+      t('confirm.restartOk'),
+      () => {
+        touchRestartBtn.classList.remove('pending');
+        startGame();
+      },
+      'danger',
+      () => {
+        touchRestartBtn.classList.remove('pending');
+        setPaused(false);
+      }
+    );
+    return;
+  }
   startGame();
 }
 
@@ -1080,9 +1201,40 @@ function togglePause() {
 function setPaused(newPaused) {
   if (state !== 'playing' || paused === newPaused) return;
   paused = newPaused;
+  // Al reanudar (siempre es un gesto del usuario: tecla o toque), reanudamos el
+  // AudioContext. iOS lo suspende al cambiar de app o perder el foco, y si no lo
+  // despertamos aquí, el sonido quedaría mudo tras volver.
+  if (!newPaused) ensureAudio();
   beep(paused ? 250 : 500, 0.08, 'square', 0.2); // grave al pausar, agudo al reanudar
-  if (paused) stopBackgroundMusic();
-  else startBackgroundMusic();
+  if (paused) {
+    stopBackgroundMusic();
+  } else {
+    startBackgroundMusic();
+    // Al reanudar no se lanza la pelota de golpe: cuenta atrás 3-2-1 primero.
+    // Solo si no había ya una cuenta atrás en curso (p. ej. un saque).
+    if (countdown === 0) {
+      countdown = 3;
+      launchTimer = 60;
+      resumeCountdown = true;
+    }
+  }
+  updatePauseButton();
+}
+
+// Botón de pausa del móvil: muestra ⏸ jugando y ▶ (atenuado) en pausa.
+function updatePauseButton() {
+  touchPauseBtn.classList.toggle('off', paused);
+  touchPauseIcon.className = paused ? 'icon icon-play' : 'icon icon-pause';
+  touchPauseBtn.setAttribute('aria-label', t(paused ? 'touch.resume' : 'touch.pause'));
+}
+
+// Botón de sonido del móvil: altavoz con volumen, o altavoz tachado (atenuado)
+// cuando todo está silenciado.
+function updateSoundButton() {
+  touchSoundBtn.classList.toggle('off', muted);
+  touchSoundIcon.className = muted ? 'icon icon-mute' : 'icon icon-sound';
+  touchSoundBtn.setAttribute('aria-label', t(muted ? 'touch.unmute' : 'touch.mute'));
+  touchSoundBtn.setAttribute('aria-pressed', String(muted));
 }
 
 // Pausa automáticamente al cambiar de pestaña o perder el foco.
@@ -1112,8 +1264,6 @@ function showSetup() {
   state = 'setup';
   menuMainEl.classList.add('hidden');
   menuSetupEl.classList.remove('hidden');
-  restartBtn.classList.remove('hidden');
-  restartBtn.textContent = t('setup.start');
   overlayTitle.classList.add('hidden'); // sin título redundante: el "PONG" grande ya está arriba
   overlaySubtitle.classList.remove('hidden');
   overlaySubtitle.textContent = t('setup.subtitle');
@@ -1127,9 +1277,27 @@ function showResultScreen() {
   restartBtn.classList.remove('hidden');
 }
 
-// Vuelve al menú principal, descartando la partida en curso
+// Vuelve al menú principal, descartando la partida en curso.
+// Si hay una partida sin terminar, pide confirmación antes de salir.
 function quitToMenu() {
   if (state === 'start') return; // ya estamos en el menú principal
+  if (state === 'playing') {
+    // Congela la partida mientras decides; al cancelar se reanuda con cuenta atrás 3-2-1.
+    if (!paused) setPaused(true);
+    openConfirm(
+      t('confirm.quitTitle'),
+      t('confirm.quitMessage'),
+      t('confirm.quitOk'),
+      doQuitToMenu,
+      'danger',
+      () => setPaused(false)
+    );
+    return;
+  }
+  doQuitToMenu();
+}
+
+function doQuitToMenu() {
   stopBackgroundMusic();
   playPowerOffSound();
   paused = false;
@@ -1213,9 +1381,10 @@ function setPlayerSide(side) {
   updateScoreLabels();
 }
 
-// Nombre del jugador humano (depende del lado elegido contra la IA)
+// Nombre del jugador humano contra la IA. Siempre es el Jugador 1 (tu nombre),
+// sin importar el lado que elijas: la IA es el rival, no el "Jugador 2".
 function humanName() {
-  return playerSide === 'left' ? player1Name : player2Name;
+  return player1Name;
 }
 
 function setBestOf(newBestOf) {
@@ -1279,8 +1448,13 @@ function loadStats() {
           dificil: saved.bestStreaks.dificil || 0
         };
       }
-      stats.bestMargin = saved.bestMargin || 0;
-      stats.bestResult = saved.bestResult || '—';
+      if (saved.winsByDifficulty) {
+        stats.winsByDifficulty = {
+          facil: saved.winsByDifficulty.facil || 0,
+          normal: saved.winsByDifficulty.normal || 0,
+          dificil: saved.winsByDifficulty.dificil || 0
+        };
+      }
       stats.playTimeMs = saved.playTimeMs || 0;
     }
   } catch (error) {
@@ -1296,33 +1470,65 @@ function saveStats() {
   }
 }
 
+// Confirmación visual personalizada (en vez del confirm() del navegador).
+// Es reutilizable: se le pasa el texto y la acción a ejecutar al confirmar.
+// `variant` es 'danger' (rojo, para borrar) o 'warning' (ámbar, para restablecer).
+let confirmCallback = null;
+let confirmCancelCallback = null; // acción al cancelar (Cancelar, ESC o clic fuera)
+
+function openConfirm(title, message, okLabel, onConfirm, variant = 'danger', onCancel = null) {
+  confirmTitleEl.textContent = title;
+  confirmMessageEl.textContent = message;
+  confirmOkBtn.textContent = okLabel;
+  confirmCallback = onConfirm;
+  confirmCancelCallback = onCancel;
+  confirmModal.classList.toggle('warning', variant === 'warning');
+  confirmModal.classList.remove('hidden');
+}
+
+function closeConfirm(runCancel = true) {
+  const cancelCb = confirmCancelCallback;
+  confirmModal.classList.add('hidden');
+  confirmModal.classList.remove('warning');
+  confirmCallback = null;
+  confirmCancelCallback = null;
+  if (runCancel && cancelCb) cancelCb();
+}
+
 function resetStats() {
-  if (!confirm(t('confirm.resetStats'))) return;
-  stats = {
-    humanWins: 0,
-    iaWins: 0,
-    p1Wins: 0,
-    p2Wins: 0,
-    bestMargin: 0,
-    bestResult: '—',
-    playTimeMs: 0,
-    streaks: { facil: 0, normal: 0, dificil: 0 },
-    bestStreaks: { facil: 0, normal: 0, dificil: 0 }
-  };
-  saveStats();
-  renderStats(); // actualizamos el modal de estadísticas en el que se pulsa el botón
+  openConfirm(
+    t('confirm.resetStats'),
+    t('confirm.cannotUndo'),
+    t('confirm.delete'),
+    () => {
+      stats = {
+        humanWins: 0,
+        iaWins: 0,
+        p1Wins: 0,
+        p2Wins: 0,
+        playTimeMs: 0,
+        streaks: { facil: 0, normal: 0, dificil: 0 },
+        bestStreaks: { facil: 0, normal: 0, dificil: 0 },
+        winsByDifficulty: { facil: 0, normal: 0, dificil: 0 }
+      };
+      saveStats();
+      renderStats(); // actualizamos el modal de estadísticas en el que se pulsa el botón
+    }
+  );
 }
 
 // Restablece todos los ajustes guardados y las estadísticas a sus valores por defecto
 function resetAllSettings() {
-  if (!confirm(t('confirm.resetAll'))) return;
+  openConfirm(t('confirm.resetAll'), t('confirm.cannotUndo'), t('customize.resetAll'), doResetAll, 'danger');
+}
 
+function doResetAll() {
   // 1. Borramos todas las claves guardadas del juego
   try {
     [
       'pong-music-volume', 'pong-effects-volume', 'pong-volume',
       'pong-music-enabled', 'pong-effects-enabled', 'pong-music-theme', 'pong-stats', 'pong-names',
-      'pong-color', 'pong-palette', 'pong-theme'
+      'pong-color', 'pong-palette', 'pong-theme', 'pong-allow-portrait'
     ].forEach((key) => localStorage.removeItem(key));
   } catch (error) {
     // si el navegador bloquea localStorage, seguimos con los valores por defecto
@@ -1341,6 +1547,7 @@ function resetAllSettings() {
   paddleColor = '#ffffff';
   palette = 'verde';
   theme = 'system';
+  allowPortrait = false;
   player1Name = 'Jugador 1';
   player2Name = 'Jugador 2';
   stats = {
@@ -1348,11 +1555,10 @@ function resetAllSettings() {
     iaWins: 0,
     p1Wins: 0,
     p2Wins: 0,
-    bestMargin: 0,
-    bestResult: '—',
     playTimeMs: 0,
     streaks: { facil: 0, normal: 0, dificil: 0 },
-    bestStreaks: { facil: 0, normal: 0, dificil: 0 }
+    bestStreaks: { facil: 0, normal: 0, dificil: 0 },
+    winsByDifficulty: { facil: 0, normal: 0, dificil: 0 }
   };
 
   // 3. Sincronizamos toda la interfaz con los valores por defecto
@@ -1360,10 +1566,12 @@ function resetAllSettings() {
   effectsVolumeSlider.value = '1';
   updateMusicToggleBtn();
   updateEffectsToggleBtn();
+  updateSoundButton(); // el sonido vuelve a estar activado
   updateThemeButtons();
   setPaddleColor(paddleColor);
   setPalette(palette);
   setTheme(theme);
+  setAllowPortrait(allowPortrait);
   resizeCanvas(); // reaplicamos la resolución automática sin el tope anterior
   name1Input.value = player1Name;
   name2Input.value = player2Name;
@@ -1491,35 +1699,38 @@ function applyTheme() {
   updateThemeColor();
 }
 
+// Activa o desactiva el modo vertical (jugar en retrato). Por defecto el juego
+// pide girar el móvil; al desbloquearlo se oculta el aviso y se optimiza el layout.
+function setAllowPortrait(value) {
+  allowPortrait = value;
+  try {
+    localStorage.setItem('pong-allow-portrait', String(value));
+  } catch (error) {
+    // si el navegador bloquea localStorage, no guardamos
+  }
+  document.body.classList.toggle('allow-portrait', value);
+  orientationLandscapeBtn.classList.toggle('selected', !value);
+  orientationPortraitBtn.classList.toggle('selected', value);
+  scheduleResize(); // el layout cambia (título/scoreboard) y hay que re-medir el lienzo
+}
+
 function renderStats() {
   const total = stats.humanWins + stats.iaWins + stats.p1Wins + stats.p2Wins;
   statsTotalEl.textContent = String(total);
   statsWinsEl.textContent = String(stats.humanWins);
   statsLossesEl.textContent = String(stats.iaWins);
   statsTimeEl.textContent = formatPlayTime(stats.playTimeMs);
-  statsBestLineEl.textContent = stats.bestResult;
 
-  // Barra de porcentaje contra la IA (verde = victorias tuyas).
+  // Contra la IA: barra de porcentaje de victorias
   const iaGames = stats.humanWins + stats.iaWins;
   const iaPct = iaGames === 0 ? 0 : (stats.humanWins / iaGames) * 100;
   statsIaBarEl.style.width = iaPct.toFixed(1) + '%';
-  statsIaLineEl.textContent = `${humanName()} ${stats.humanWins} · ${t('stats.ia')} ${stats.iaWins}`;
-  statsIaPercentEl.textContent = iaGames === 0
-    ? 'Victorias: —'
-    : `Victorias: ${Math.round(iaPct)}%`;
+  statsIaPercentEl.textContent = t('stats.winPct', { pct: iaGames === 0 ? '—' : Math.round(iaPct) + '%' });
 
-  streakFacilEl.textContent = `${difficultyName('facil')} ${stats.bestStreaks.facil}`;
-  streakNormalEl.textContent = `${difficultyName('normal')} ${stats.bestStreaks.normal}`;
-  streakDificilEl.textContent = `${difficultyName('dificil')} ${stats.bestStreaks.dificil}`;
-
-  // Barra de porcentaje en 2 jugadores (verde = victorias del jugador 1).
-  const pvpGames = stats.p1Wins + stats.p2Wins;
-  const pvpPct = pvpGames === 0 ? 0 : (stats.p1Wins / pvpGames) * 100;
-  statsPvpBarEl.style.width = pvpPct.toFixed(1) + '%';
-  statsPvpLineEl.textContent = `${player1Name} ${stats.p1Wins} · ${player2Name} ${stats.p2Wins}`;
-  statsPvpPercentEl.textContent = pvpGames === 0
-    ? 'Victorias J1: —'
-    : `Victorias J1: ${Math.round(pvpPct)}%`;
+  // Victorias totales por dificultad
+  streakFacilEl.textContent = `${difficultyName('facil')} ${stats.winsByDifficulty.facil}`;
+  streakNormalEl.textContent = `${difficultyName('normal')} ${stats.winsByDifficulty.normal}`;
+  streakDificilEl.textContent = `${difficultyName('dificil')} ${stats.winsByDifficulty.dificil}`;
 }
 
 // Convierte milisegundos a un texto legible (p. ej. "2 h 5 min", "42 s")
@@ -1540,11 +1751,13 @@ function startGame() {
   score2 = 0;
   serverSide = Math.random() < 0.5 ? 'left' : 'right'; // primer saque al azar
   paused = false;
+  updatePauseButton(); // el botón de pausa vuelve a "pausar" (icono ⏸ brillante)
   updateScoreboard();
   overlay.classList.add('hidden');
   state = 'playing';
   updateDifficultyBadge();
   touchControlsEl.classList.add('in-game'); // botones táctiles solo durante la partida
+  touchHintShown = false; // el aviso táctil se muestra en la primera cuenta atrás de cada partida
   resetBall();
 }
 
@@ -1638,6 +1851,7 @@ function endGame() {
   if (mode === 'ai') {
     if (humanWon) {
       stats.humanWins++;
+      stats.winsByDifficulty[difficulty]++;
       stats.streaks[difficulty]++;
       if (stats.streaks[difficulty] > stats.bestStreaks[difficulty]) {
         stats.bestStreaks[difficulty] = stats.streaks[difficulty];
@@ -1690,10 +1904,13 @@ function resetBall() {
   ball.vy = 0;
   countdown = 3;     // empieza la cuenta atrás
   launchTimer = 60;  // ~1 segundo por número (60 fotogramas a 60 fps)
+  resumeCountdown = false; // un saque normal, no una reanudación
   aiTargetY = HEIGHT / 2;
   aiReactionTimer = 0;
   paddle1.vel = 0;
   paddle2.vel = 0;
+  overspeedHits = 0; // cada punto vuelve a empezar desde la velocidad de saque
+  syncRenderState(); // sin interpolación tras el salto de posición
 }
 
 // Lanza la pelota desde el lado que tiene el saque, hacia el rival
@@ -1721,45 +1938,6 @@ function randomReactionDelay() {
   return Math.max(1, aiReactionDelay + variation);
 }
 
-// Predice la coordenada Y (centro) a la que llegará la pelota cuando alcance
-// la pala de la IA, teniendo en cuenta los rebotes en el techo y el suelo.
-// Solo sirve cuando la pelota se dirige hacia la IA.
-function predictBallY() {
-  const aiOnRight = playerSide === 'left';
-  const aiPaddle = aiOnRight ? paddle2 : paddle1;
-  // Línea X donde la pelota tocaría la cara de la pala de la IA
-  const targetX = aiOnRight ? aiPaddle.x - BALL_SIZE : aiPaddle.x + PADDLE_WIDTH;
-
-  const vx = ball.vx;
-  const movingTowardAI = aiOnRight ? vx > 0 : vx < 0;
-  if (!movingTowardAI) return ball.y + BALL_SIZE / 2; // aún no podemos predecir
-
-  // Simulamos el vuelo fotograma a fotograma (la velocidad horizontal es constante)
-  let x = ball.x;
-  let y = ball.y;
-  let vy = ball.vy;
-
-  for (let i = 0; i < 2000; i++) {
-    x += vx;
-    y += vy;
-
-    // Rebotes en el techo y el suelo (igual que en update())
-    if (y <= 0) {
-      y = 0;
-      vy = Math.abs(vy);
-    } else if (y + BALL_SIZE >= HEIGHT) {
-      y = HEIGHT - BALL_SIZE;
-      vy = -Math.abs(vy);
-    }
-
-    if (aiOnRight ? x >= targetX : x <= targetX) {
-      return y + BALL_SIZE / 2;
-    }
-  }
-
-  return ball.y + BALL_SIZE / 2; // por seguridad, devolvemos la posición actual
-}
-
 // 7. Lógica del juego (se ejecuta una vez por fotograma)
 function update() {
   if (state !== 'playing' || paused) return;
@@ -1773,19 +1951,15 @@ function update() {
     const humanPaddle = playerSide === 'right' ? paddle2 : paddle1;
     const aiPaddle = playerSide === 'right' ? paddle1 : paddle2;
 
-    // Pala humana con pequeña aceleración (física, sin arranques secos)
+    // Pala humana con pequeña aceleración (física, sin arranques secos).
     const humanDesired = (keys['w'] ? -PADDLE_SPEED : 0) + (keys['s'] ? PADDLE_SPEED : 0);
     humanPaddle.vel += (humanDesired - humanPaddle.vel) * PADDLE_ACCEL;
     humanPaddle.y += humanPaddle.vel;
 
     // La IA reacciona a la pelota con un retraso según la dificultad.
-    // En difícil, además, predice la trayectoria en lugar de solo seguirla.
     aiReactionTimer--;
     if (aiReactionTimer <= 0) {
-      const baseTarget =
-        difficulty === 'dificil'
-          ? predictBallY()
-          : ball.y + BALL_SIZE / 2;
+      const baseTarget = ball.y + BALL_SIZE / 2;
       // Error aleatorio de puntería, mayor cuanto más rápido va la pala:
       // al esprintar la IA apunta peor (como un jugador que corre).
       const maxSprint = aiSpeed * 1.8;
@@ -1827,13 +2001,19 @@ function update() {
   paddle1.y = clamp(paddle1.y, 0, HEIGHT - paddleHeight);
   paddle2.y = clamp(paddle2.y, 0, HEIGHT - paddleHeight);
 
-  // Cuenta atrás antes del saque (3, 2, 1...)
+  // Cuenta atrás antes del saque o de reanudar (3, 2, 1...)
   if (countdown > 0) {
     launchTimer--;
     if (launchTimer <= 0) {
       countdown--;
       launchTimer = 60; // un segundo para el siguiente número
-      if (countdown === 0) launchBall();
+      if (countdown === 0) {
+        if (resumeCountdown) {
+          resumeCountdown = false; // la pelota conserva su velocidad y continúa
+        } else {
+          launchBall();
+        }
+      }
     }
     return;
   }
@@ -1895,11 +2075,17 @@ function bounceOffPaddle(paddle) {
     (ball.y + BALL_SIZE / 2 - (paddle.y + paddleHeight / 2)) / (paddleHeight / 2);
   const maxAngle = Math.PI / 4; // rebote máximo de 45 grados
   const angle = hitPosition * maxAngle;
-  // Cada golpe acelera según la dificultad (speedUp), sin superar el tope máximo.
+  // Cada golpe acelera según la dificultad (speedUp) hasta el tope normal.
   // El factor móvil solo se aplica en el SAQUE (launchBall); aquí NO se repite,
   // porque multiplicar por un factor < 1 junto al speedUp (> 1) frenaría la bola
   // en cada golpe en vez de acelerarla (0.85 × 1.08 < 1).
-  const speed = Math.min(Math.hypot(ball.vx, ball.vy) * ballSpeedUp, MAX_BALL_SPEED);
+  let speed = Math.min(Math.hypot(ball.vx, ball.vy) * ballSpeedUp, MAX_BALL_SPEED);
+  if (speed >= MAX_BALL_SPEED) {
+    // Tope alcanzado: si el rally no termina, cada golpe suma un poco más de
+    // velocidad hasta el techo absoluto, para que acabe por acelerarse.
+    overspeedHits++;
+    speed = Math.min(MAX_BALL_SPEED + overspeedHits * RALLY_EXTRA_SPEED, RALLY_MAX_SPEED);
+  }
   const direction = ball.vx > 0 ? -1 : 1; // rebota hacia el lado contrario
 
   ball.vx = direction * Math.cos(angle) * speed;
@@ -1946,14 +2132,6 @@ function pointScored(scoringSide) {
 
 // Alguien ha llegado a los puntos necesarios (bestOf): fin de la partida.
 function winGame() {
-  // Mejor resultado: mayor diferencia de puntos en una sola partida
-  const margin = Math.abs(score1 - score2);
-  if (margin > stats.bestMargin) {
-    stats.bestMargin = margin;
-    stats.bestResult = `${Math.max(score1, score2)}-${Math.min(score1, score2)}`;
-    saveStats();
-  }
-
   endGame(); // partida terminada
 }
 
@@ -1978,28 +2156,33 @@ function draw() {
 
   // Palas: sombra dura, relleno y contorno de 1px del color del tema.
   // Redondeamos la Y para que el contorno quede nítido a escala entera.
-  const py1 = Math.round(paddle1.y);
-  const py2 = Math.round(paddle2.y);
+  const py1 = Math.round(prevPaddle1Y + (paddle1.y - prevPaddle1Y) * renderAlpha);
+  const py2 = Math.round(prevPaddle2Y + (paddle2.y - prevPaddle2Y) * renderAlpha);
   ctx.fillStyle = hardShadowColor();
   ctx.fillRect(paddle1.x + SHADOW_OFFSET, py1 + SHADOW_OFFSET, PADDLE_WIDTH, paddleHeight);
   ctx.fillRect(paddle2.x + SHADOW_OFFSET, py2 + SHADOW_OFFSET, PADDLE_WIDTH, paddleHeight);
   ctx.fillStyle = paddleFillColor();
   ctx.fillRect(paddle1.x, py1, PADDLE_WIDTH, paddleHeight);
   ctx.fillRect(paddle2.x, py2, PADDLE_WIDTH, paddleHeight);
-  ctx.strokeStyle = accentHex();
+  // El contorno de las palas es un tono más claro del color elegido en Personalizar.
+  ctx.strokeStyle = paddleOutlineColor();
   ctx.lineWidth = 1;
   ctx.strokeRect(paddle1.x + 0.5, py1 + 0.5, PADDLE_WIDTH - 1, paddleHeight - 1);
   ctx.strokeRect(paddle2.x + 0.5, py2 + 0.5, PADDLE_WIDTH - 1, paddleHeight - 1);
 
-  // Estela de la pelota: un degradado suave que se estrecha y desvanece
-  // (color fijo, sin cambiar de tono con la velocidad).
+  // Estela de la pelota: un degradado suave que se estrecha y desvanece.
+  // Cuando la bola supera el tope normal, la estela se tiñe de naranja
+  // (overdrive) para avisar de que el rally se está calentando.
+  const overdrive = overdriveFactor(Math.hypot(ball.vx, ball.vy));
+  const trailRgb = overdrive > 0 ? mixOverdrive(accentRgb(), overdrive) : accentRgb();
   ctx.lineCap = 'round';
   ctx.lineJoin = 'round';
   for (let i = 0; i < trail.length - 1; i++) {
     const progress = i / (trail.length - 1); // 0 = reciente, 1 = antiguo
-    const alpha = (1 - progress) * 0.45;
+    // La estela se intensifica en overdrive para que el aviso se note.
+    const alpha = (1 - progress) * (0.45 + overdrive * 0.3);
     const lineWidth = BALL_SIZE * (1 - progress * 0.7);
-    ctx.strokeStyle = `rgba(${accentRgb()}, ${alpha})`;
+    ctx.strokeStyle = `rgba(${trailRgb}, ${alpha})`;
     ctx.lineWidth = lineWidth;
     ctx.beginPath();
     ctx.moveTo(trail[i].x + BALL_SIZE / 2, trail[i].y + BALL_SIZE / 2);
@@ -2011,16 +2194,28 @@ function draw() {
 
   // Pelota (posición redondeada para que se vea nítida a escala entera)
   // y su sombra dura, desplazada hacia abajo-derecha.
-  const bx = Math.round(ball.x);
-  const by = Math.round(ball.y);
+  const bx = Math.round(prevBallX + (ball.x - prevBallX) * renderAlpha);
+  const by = Math.round(prevBallY + (ball.y - prevBallY) * renderAlpha);
   ctx.fillStyle = hardShadowColor();
   ctx.fillRect(bx + SHADOW_OFFSET, by + SHADOW_OFFSET, BALL_SIZE, BALL_SIZE);
   ctx.fillStyle = inkColor();
   ctx.fillRect(bx, by, BALL_SIZE, BALL_SIZE);
-  // Contorno de 1px del color del tema (sprite arcade clásico)
-  ctx.strokeStyle = accentHex();
+  // Contorno de 1px del color del tema (sprite arcade clásico); en overdrive
+  // se tiñe de naranja para reforzar el aviso visual.
+  ctx.strokeStyle = overdrive > 0 ? `rgb(${trailRgb})` : accentHex();
   ctx.lineWidth = 1;
   ctx.strokeRect(bx + 0.5, by + 0.5, BALL_SIZE - 1, BALL_SIZE - 1);
+
+  // Destello de overdrive: halo naranja pulsante alrededor de la bola, que
+  // crece y parpadea suavemente mientras el rally sigue por encima del tope.
+  if (overdrive > 0) {
+    const pulse = 0.5 + 0.5 * Math.sin(performance.now() / 90);
+    const glowAlpha = overdrive * (0.2 + 0.4 * pulse);
+    const g = 1 + Math.round(overdrive * 3);
+    ctx.strokeStyle = `rgba(${overdriveRgb()}, ${glowAlpha})`;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(bx - g + 0.5, by - g + 0.5, BALL_SIZE + g * 2 - 1, BALL_SIZE + g * 2 - 1);
+  }
 
   // Cuenta atrás antes del saque
   if (countdown > 0 && state === 'playing' && !paused) {
@@ -2032,29 +2227,58 @@ function draw() {
     // En móvil, un pequeño aviso bajo el número: se muestra solo en la primera
     // cuenta atrás de la partida y desaparece al lanzar la pelota.
     if (IS_TOUCH_DEVICE && !touchHintShown) {
-      ctx.fillStyle = accentHex();
       ctx.font = '12px ' + DISPLAY_FONT;
-      ctx.fillText(t('touch.hint'), WIDTH / 2, HEIGHT / 2 + 42);
+      if (mode === 'pvp') {
+        // 2 jugadores: cada mitad de la pantalla controla su pala.
+        // Línea divisoria brillante + etiqueta con flecha en cada lado.
+        ctx.strokeStyle = `rgba(${accentRgb()}, 0.55)`;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([6, 10]);
+        ctx.beginPath();
+        // Dos tramos con un hueco central: la pelota y el número de la cuenta
+        // atrás viven en el centro (y ≈ 216..256), así que la línea no debe
+        // pasar por ahí o los taparía.
+        ctx.moveTo(WIDTH / 2, HEIGHT / 2 - 100); // tramo superior
+        ctx.lineTo(WIDTH / 2, HEIGHT / 2 - 56);
+        ctx.moveTo(WIDTH / 2, HEIGHT / 2 + 14);  // tramo inferior
+        ctx.lineTo(WIDTH / 2, HEIGHT / 2 + 92);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = accentHex();
+        ctx.textAlign = 'right';
+        ctx.fillText('< ' + t('setup.left').toUpperCase(), WIDTH / 2 - 24, HEIGHT / 2 + 46);
+        ctx.textAlign = 'left';
+        ctx.fillText(t('setup.right').toUpperCase() + ' >', WIDTH / 2 + 24, HEIGHT / 2 + 46);
+        ctx.textAlign = 'center';
+      } else {
+        ctx.fillStyle = accentHex();
+        ctx.textAlign = 'center';
+        ctx.fillText(t('touch.hint'), WIDTH / 2, HEIGHT / 2 + 42);
+      }
       if (countdown === 1) touchHintShown = true;
     }
 
-    // Indicador de quién saca: flecha hacia el centro junto a su pala
-    const serving = serverSide === 'left' ? paddle1 : paddle2;
-    const dir = serverSide === 'left' ? 1 : -1;
-    const edgeX = serverSide === 'left' ? serving.x + PADDLE_WIDTH : serving.x;
-    const cy = serving.y + paddleHeight / 2;
+    // Indicador de quién saca: flecha hacia el centro junto a su pala.
+    // Solo en un saque real; al reanudar no hay saque.
+    if (!resumeCountdown) {
+      const serving = serverSide === 'left' ? paddle1 : paddle2;
+      const dir = serverSide === 'left' ? 1 : -1;
+      const edgeX = serverSide === 'left' ? serving.x + PADDLE_WIDTH : serving.x;
+      const cy = (serverSide === 'left' ? py1 : py2) + paddleHeight / 2;
 
-    ctx.fillStyle = accentHex();
-    ctx.beginPath();
-    ctx.moveTo(edgeX + dir * 16, cy);
-    ctx.lineTo(edgeX + dir * 4, cy - 8);
-    ctx.lineTo(edgeX + dir * 4, cy + 8);
-    ctx.closePath();
-    ctx.fill();
+      ctx.fillStyle = accentHex();
+      ctx.beginPath();
+      ctx.moveTo(edgeX + dir * 16, cy);
+      ctx.lineTo(edgeX + dir * 4, cy - 8);
+      ctx.lineTo(edgeX + dir * 4, cy + 8);
+      ctx.closePath();
+      ctx.fill();
 
-    ctx.font = '16px ' + DISPLAY_FONT;
-    ctx.textAlign = serverSide === 'left' ? 'left' : 'right';
-    ctx.fillText(t('game.serve'), edgeX + dir * 22, cy + 5);
+      ctx.font = '16px ' + DISPLAY_FONT;
+      ctx.textAlign = serverSide === 'left' ? 'left' : 'right';
+      ctx.fillText(t('game.serve'), edgeX + dir * 22, cy + 5);
+    }
   }
 
   // Pantalla de pausa
@@ -2079,12 +2303,17 @@ function draw() {
   }
 }
 
-// 9. Bucle principal: se repite unas 60 veces por segundo
-let lastFrameTime = 0; // timestamp del fotograma anterior (para medir el tiempo de juego)
+// 9. Bucle principal. La lógica corre con PASO FIJO (60 pasos por segundo):
+// así la velocidad de la bola y los temporizadores NO dependen del FPS del
+// navegador (que cambia con el zoom, la pantalla o el dispositivo).
+let lastFrameTime = 0; // timestamp del fotograma anterior (para medir el tiempo real)
 let lastAutoSaveTime = 0; // último guardado automático del tiempo (para no perder minutos)
+let accumulator = 0;      // tiempo real acumulado aún no simulado (ms)
+const STEP_MS = 1000 / 60; // duración de un paso de lógica (16,67 ms)
 
 function loop(now) {
   if (lastFrameTime > 0) {
+    // Tiempo real transcurrido desde el fotograma anterior (en ms).
     const realDelta = now - lastFrameTime;
 
     // Sumamos el tiempo real que llevamos jugando (solo en plena partida, sin pausa)
@@ -2096,16 +2325,39 @@ function loop(now) {
         lastAutoSaveTime = now;
       }
     }
+
+    // Acumulamos el tiempo para la simulación. Lo limitamos a 100 ms por
+    // fotograma para evitar un "espiral de la muerte" si la pestaña se
+    // congela (p. ej. al cambiar de ventana o pestaña).
+    accumulator += Math.min(realDelta, 100);
   }
   lastFrameTime = now;
 
-  update();
+  // Ejecutamos los pasos de lógica que toquen. Si el navegador va a pocos FPS
+  // (zoom grande) se ejecutan varios pasos por fotograma; si va a muchos
+  // (zoom pequeño) se ejecuta un paso cada pocos fotogramas. En ambos casos la
+  // bola avanza lo mismo por segundo real.
+  while (accumulator >= STEP_MS) {
+    // Guardamos la posición previa ANTES de cada paso para interpolar
+    // el dibujado entre el estado anterior y el actual.
+    prevBallX = ball.x;
+    prevBallY = ball.y;
+    prevPaddle1Y = paddle1.y;
+    prevPaddle2Y = paddle2.y;
+    update();
+    accumulator -= STEP_MS;
+  }
+  // Fracción del siguiente paso aún no ejecutada: mezclamos las posiciones
+  // anterior y actual para que el movimiento se vea fluido a cualquier FPS.
+  renderAlpha = accumulator / STEP_MS;
+
   draw();
   requestAnimationFrame(loop);
 }
 
 // 10. Arranque
 restartBtn.addEventListener('click', handleSpace);
+setupStartBtn.addEventListener('click', handleSpace);
 musicVolumeSlider.addEventListener('input', handleVolumeChange);
 effectsVolumeSlider.addEventListener('input', handleVolumeChange);
 // Al soltar el deslizador, reproducimos un pitido de muestra con el nuevo volumen
@@ -2123,7 +2375,6 @@ name1Input.addEventListener('input', updatePlayerNames);
 name2Input.addEventListener('input', updatePlayerNames);
 name1Input.addEventListener('change', () => { name1Input.value = player1Name; });
 name2Input.addEventListener('change', () => { name2Input.value = player2Name; });
-rotateHintClose.addEventListener('click', () => rotateHint.classList.add('dismissed'));
 
 window.addEventListener('resize', scheduleResize);
 
@@ -2240,6 +2491,10 @@ touchRestartBtn.addEventListener('click', () => {
   handleSpace();  // reinicia la partida, igual que ESPACIO
 });
 touchMenuBtn.addEventListener('click', quitToMenu);
+touchSoundBtn.addEventListener('click', () => {
+  ensureAudio(); // por si es la primera interacción de la sesión
+  toggleMute();
+});
 
 // Devuelve qué lado controla un toque según su posición y el modo de juego.
 // En 2 jugadores en móvil, cada mitad de la PANTALLA controla su pala (los
@@ -2290,6 +2545,17 @@ function applyPointerPaddles() {
 }
 statsResetBtn.addEventListener('click', resetStats);
 statsCloseBtn.addEventListener('click', closeStats);
+
+// Diálogo de confirmación: confirmar, cancelar, clic fuera y ESC
+confirmOkBtn.addEventListener('click', () => {
+  const cb = confirmCallback;
+  closeConfirm(false); // confirmar no debe disparar la acción de cancelar
+  if (cb) cb();
+});
+confirmCancelBtn.addEventListener('click', () => closeConfirm());
+confirmModal.addEventListener('click', (event) => {
+  if (event.target === confirmModal) closeConfirm();
+});
 statsModal.addEventListener('click', (event) => {
   if (event.target === statsModal) closeStats();
 });
@@ -2325,7 +2591,7 @@ menuJugarBtn.addEventListener('click', showSetup);
 // modales). Se delega en el documento para cubrir también los botones que se
 // creen o muestren después. No afecta a deslizadores ni a controles táctiles.
 document.addEventListener('click', (event) => {
-  const btn = event.target.closest('.button, .mode-button, .link-button, .touch-btn');
+  const btn = event.target.closest('.button, .mode-button, .link-button, .touch-btn, .stats-reset');
   if (!btn) return;
   // JUGAR (el botón principal) suena más agudo para diferenciarlo de los secundarios.
   playClick(btn.id === 'menu-jugar' ? 1200 : 800);
@@ -2348,6 +2614,8 @@ paletteRosaBtn.addEventListener('click', () => setPalette('rosa'));
 themeDarkBtn.addEventListener('click', () => setTheme('dark'));
 themeLightBtn.addEventListener('click', () => setTheme('light'));
 themeSystemBtn.addEventListener('click', () => setTheme('system'));
+orientationLandscapeBtn.addEventListener('click', () => setAllowPortrait(false));
+orientationPortraitBtn.addEventListener('click', () => setAllowPortrait(true));
 themeClasicoBtn.addEventListener('click', () => { setMusicTheme('clasico'); previewMusicTheme('clasico'); });
 themeEnergeticoBtn.addEventListener('click', () => { setMusicTheme('energetico'); previewMusicTheme('energetico'); });
 themeTranquiloBtn.addEventListener('click', () => { setMusicTheme('tranquilo'); previewMusicTheme('tranquilo'); });
@@ -2440,6 +2708,14 @@ try {
   // usamos 'system' por defecto
 }
 setTheme(theme); // aplica la clase al body y el color del navegador
+
+// Recuperar la preferencia de orientación (desbloquear el modo vertical)
+try {
+  allowPortrait = localStorage.getItem('pong-allow-portrait') === 'true';
+} catch (error) {
+  // usamos el modo horizontal (bloqueado) por defecto
+}
+setAllowPortrait(allowPortrait); // sincroniza el botón y la clase del body
 
 // Si el usuario eligió 'system', seguimos los cambios del sistema operativo en vivo.
 const prefersDarkQuery = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : null;

@@ -2,7 +2,9 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <!-- maximum-scale=1 y user-scalable=no evitan el zoom en el móvil: es un
+       juego en horizontal y el pellizco/doble toque molesta al jugar. -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="description" content="Pong clásico en HTML, CSS y JavaScript puro. Juega contra un amigo o contra la IA, instalable como PWA.">
   <title>Pong</title>
 
@@ -38,9 +40,10 @@
     </div>
   </div>
 
+  <!-- Aviso a pantalla completa: el juego solo se juega en horizontal (móvil) -->
   <div id="rotate-hint" class="rotate-hint">
-    <span data-i18n="rotate.hint">Gira el móvil a horizontal para jugar mejor</span>
-    <button id="rotate-hint-close" class="rotate-hint-close" type="button" aria-label="Cerrar" data-i18n-aria="common.close">✕</button>
+    <div class="rotate-hint-icon" aria-hidden="true"></div>
+    <p class="rotate-hint-text" data-i18n="rotate.hint">Gira el móvil a horizontal para jugar</p>
   </div>
 
   <main class="game">
@@ -104,18 +107,22 @@
             <button id="bestof-3" class="mode-button" type="button">3</button>
             <button id="bestof-5" class="mode-button selected" type="button">5</button>
           </div>
-          <button id="menu-personalizar" class="link-button" type="button" data-i18n="setup.customize">Personalizar</button>
-          <button id="menu-volver" class="link-button" type="button" data-i18n="setup.back">← Volver</button>
+          <div class="setup-actions">
+            <button id="menu-volver" class="button button-outline" type="button" data-i18n="setup.back">← Volver</button>
+            <button id="setup-start" class="button setup-start" type="button" data-i18n="setup.start">Empezar</button>
+            <button id="menu-personalizar" class="button button-outline" type="button" data-i18n="setup.customize">Personalizar</button>
+          </div>
         </div>
 
-        <button id="restart" class="button hidden" data-i18n="setup.start">Empezar</button>
+        <button id="restart" class="button hidden" data-i18n="game.playAgain">Jugar de nuevo</button>
       </div>
     </div>
 
     <div id="touch-controls" class="touch-controls">
-      <button id="touch-pause" class="touch-btn touch-pause" aria-label="Pausa" data-i18n-aria="touch.pause"><span class="icon icon-pause" aria-hidden="true"></span></button>
+      <button id="touch-pause" class="touch-btn touch-pause" aria-label="Pausa"><span id="touch-pause-icon" class="icon icon-pause" aria-hidden="true"></span></button>
       <button id="touch-restart" class="touch-btn" aria-label="Reiniciar partida" data-i18n-aria="touch.restart"><span class="icon icon-restart" aria-hidden="true"></span></button>
       <button id="touch-menu" class="touch-btn" aria-label="Volver al menú" data-i18n-aria="touch.back"><span class="icon icon-home" aria-hidden="true"></span></button>
+      <button id="touch-sound" class="touch-btn" aria-label="Silenciar sonido"><span id="touch-sound-icon" class="icon icon-sound" aria-hidden="true"></span></button>
     </div>
 
   </main>
@@ -126,10 +133,6 @@
 
       <!-- Resumen en tarjetas: números grandes y legibles de un vistazo -->
       <div class="stats-grid">
-        <div class="stat-tile">
-          <span class="stat-value" id="stats-total">0</span>
-          <span class="stat-label" data-i18n="stats.total">Partidas</span>
-        </div>
         <div class="stat-tile stat-tile-win">
           <span class="stat-value" id="stats-wins">0</span>
           <span class="stat-label" data-i18n="stats.wins">Victorias</span>
@@ -141,25 +144,23 @@
           <span class="stat-sub" data-i18n="stats.vsIa">vs IA</span>
         </div>
         <div class="stat-tile">
+          <span class="stat-value" id="stats-total">0</span>
+          <span class="stat-label" data-i18n="stats.total">Partidas</span>
+        </div>
+        <div class="stat-tile">
           <span class="stat-value" id="stats-time">0 s</span>
           <span class="stat-label" data-i18n="stats.time">Tiempo</span>
         </div>
       </div>
 
-      <div class="stats-best-card">
-        <span class="stat-label" data-i18n="stats.best">Mejor resultado</span>
-        <span class="stat-value" id="stats-best-line">—</span>
-      </div>
-
-      <!-- Contra la IA: barra de porcentaje + racha por dificultad -->
+      <!-- Contra la IA: barra de porcentaje + victorias por dificultad -->
       <div class="stats-group">
         <h3 data-i18n="stats.againstAi">Contra la IA</h3>
         <div class="stat-bar" role="img" aria-label="Porcentaje de victorias contra la IA" data-i18n-aria="stats.winBarAria">
           <div class="stat-bar-fill" id="stats-ia-bar"></div>
         </div>
-        <p class="stat-bar-caption" id="stats-ia-line">Tú 0 · IA 0</p>
         <p class="stat-bar-caption stat-bar-percent" id="stats-ia-percent">Victorias: —</p>
-        <p class="stat-bar-caption" data-i18n="stats.streak">Mejor racha</p>
+        <p class="stat-bar-caption" data-i18n="stats.byDifficulty">Victorias por dificultad</p>
         <div class="streak-chips stats-streak">
           <span class="streak-chip" id="streak-facil">Fácil 0</span>
           <span class="streak-chip" id="streak-normal">Normal 0</span>
@@ -167,19 +168,23 @@
         </div>
       </div>
 
-      <!-- 2 jugadores: barra de porcentaje del jugador 1 -->
-      <div class="stats-group">
-        <h3 data-i18n="setup.modePvp">2 jugadores</h3>
-        <div class="stat-bar" role="img" aria-label="Porcentaje de victorias del jugador 1" data-i18n-aria="stats.pvpBarAria">
-          <div class="stat-bar-fill" id="stats-pvp-bar"></div>
-        </div>
-        <p class="stat-bar-caption" id="stats-pvp-line">J1 0 · J2 0</p>
-        <p class="stat-bar-caption stat-bar-percent" id="stats-pvp-percent">Victorias J1: —</p>
-      </div>
-
       <div class="stats-actions">
-        <button id="stats-reset" class="link-button" type="button" data-i18n="stats.reset">Borrar historial</button>
+        <button id="stats-reset" class="stats-reset" type="button" aria-label="Borrar historial" title="Borrar historial" data-i18n-aria="stats.reset" data-i18n-title="stats.reset">
+          <span class="icon icon-trash" aria-hidden="true"></span>
+        </button>
         <button id="stats-close" class="button" type="button" data-i18n="common.close">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirmación visual para acciones destructivas (borrar historial) -->
+  <div id="confirm-modal" class="confirm-modal hidden">
+    <div class="confirm-panel" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+      <h3 id="confirm-title" class="confirm-title">¿Borrar el historial?</h3>
+      <p id="confirm-message" class="confirm-message">Esta acción no se puede deshacer.</p>
+      <div class="confirm-actions">
+        <button id="confirm-cancel" class="button button-outline" type="button" data-i18n="confirm.cancel">Cancelar</button>
+        <button id="confirm-ok" class="button confirm-ok" type="button" data-i18n="confirm.delete">Borrar</button>
       </div>
     </div>
   </div>
@@ -221,11 +226,26 @@
         <div class="ctrl-list">
           <div class="ctrl-row">
             <div class="ctrl-icon" aria-hidden="true"><span class="icon icon-drag"></span></div>
-            <p class="ctrl-action" data-i18n="controls.touchDrag">Arrastra por el tablero para mover tu pala</p>
+            <div class="ctrl-text">
+              <strong class="ctrl-title" data-i18n="controls.touchP1">1 jugador</strong>
+              <p class="ctrl-action" data-i18n="controls.touchDrag">Arrastra por el tablero para mover tu pala</p>
+            </div>
           </div>
           <div class="ctrl-row">
-            <div class="ctrl-icon" aria-hidden="true"><span class="icon icon-pause"></span><span class="icon icon-restart"></span><span class="icon icon-home"></span></div>
-            <p class="ctrl-action" data-i18n="controls.touchBtns">Pausa, reiniciar y volver al menú con los botones táctiles</p>
+            <div class="ctrl-icon" aria-hidden="true"><span class="icon icon-halves"><i class="h-half h-left">&lt;</i><i class="h-half h-right">&gt;</i></span></div>
+            <div class="ctrl-text">
+              <strong class="ctrl-title" data-i18n="controls.touchP2">2 jugadores</strong>
+              <p class="ctrl-action" data-i18n="controls.touchP2Desc">Cada mitad de la pantalla mueve su pala</p>
+            </div>
+          </div>
+          <div class="ctrl-row ctrl-row-buttons">
+            <strong class="ctrl-title" data-i18n="controls.touchButtons">Botones</strong>
+            <div class="touch-btn-guide">
+              <div class="guide-btn"><span class="guide-circle" aria-hidden="true"><span class="icon icon-pause"></span></span><span class="guide-label" data-i18n="controls.touchPause">Pausa</span></div>
+              <div class="guide-btn"><span class="guide-circle" aria-hidden="true"><span class="icon icon-restart"></span></span><span class="guide-label" data-i18n="controls.touchRestart">Reiniciar</span></div>
+              <div class="guide-btn"><span class="guide-circle" aria-hidden="true"><span class="icon icon-home"></span></span><span class="guide-label" data-i18n="controls.touchMenu">Menú</span></div>
+              <div class="guide-btn"><span class="guide-circle" aria-hidden="true"><span class="icon icon-sound"></span></span><span class="guide-label" data-i18n="controls.touchSound">Sonido</span></div>
+            </div>
           </div>
         </div>
       </div>
@@ -282,10 +302,9 @@
         <div class="color-options">
           <button class="color-swatch selected theme-swatch" type="button" data-color="#ffffff" title="Por defecto (sigue el tema)" aria-label="Color por defecto, sigue el tema" data-i18n-title="customize.default" data-i18n-aria="customize.default"></button>
           <button class="color-swatch" type="button" data-color="#7cfc00" title="Verde" aria-label="Verde" style="background:#7cfc00" data-i18n-title="customize.green" data-i18n-aria="customize.green"></button>
-          <button class="color-swatch" type="button" data-color="#00e5ff" title="Cian" aria-label="Cian" style="background:#00e5ff" data-i18n-title="customize.cyan" data-i18n-aria="customize.cyan"></button>
+          <button class="color-swatch" type="button" data-color="#4da6ff" title="Azul" aria-label="Azul" style="background:#4da6ff" data-i18n-title="customize.blue" data-i18n-aria="customize.blue"></button>
+          <button class="color-swatch" type="button" data-color="#ffb020" title="Ámbar" aria-label="Ámbar" style="background:#ffb020" data-i18n-title="customize.amber" data-i18n-aria="customize.amber"></button>
           <button class="color-swatch" type="button" data-color="#ff4dd8" title="Rosa" aria-label="Rosa" style="background:#ff4dd8" data-i18n-title="customize.pink" data-i18n-aria="customize.pink"></button>
-          <button class="color-swatch" type="button" data-color="#ffd54a" title="Amarillo" aria-label="Amarillo" style="background:#ffd54a" data-i18n-title="customize.yellow" data-i18n-aria="customize.yellow"></button>
-          <button class="color-swatch" type="button" data-color="#ff5252" title="Rojo" aria-label="Rojo" style="background:#ff5252" data-i18n-title="customize.red" data-i18n-aria="customize.red"></button>
         </div>
       </div>
       <div class="stats-group">
@@ -311,6 +330,14 @@
           <button id="theme-light" class="mode-button" type="button" data-i18n="customize.light">Claro</button>
           <button id="theme-system" class="mode-button selected" type="button" data-i18n="customize.system">Sistema</button>
         </div>
+      </div>
+      <div class="stats-group">
+        <h3 data-i18n="customize.orientation">Orientación</h3>
+        <div class="theme-mode-selector">
+          <button id="orientation-landscape" class="mode-button selected" type="button" data-i18n="customize.orientLandscape">Horizontal</button>
+          <button id="orientation-portrait" class="mode-button" type="button" data-i18n="customize.orientPortrait">Vertical</button>
+        </div>
+        <p class="stats-row" data-i18n="customize.orientDesc">Desbloquea el juego en vertical para no tener que girar el móvil.</p>
       </div>
       <div class="stats-group">
         <h3 data-i18n="customize.reset">Restablecer</h3>

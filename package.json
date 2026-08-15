@@ -1,0 +1,13 @@
+{
+  "name": "pong",
+  "version": "1.0.0",
+  "description": "Juego de Pong clásico en HTML, CSS y JavaScript puro. Sin dependencias, instalable como PWA.",
+  "private": true,
+  "scripts": {
+    "start": "node tools/server.js",
+    "icons": "node tools/generate-icons.js"
+  },
+  "engines": {
+    "node": ">=14"
+  }
+}

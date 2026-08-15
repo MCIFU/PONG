@@ -1,0 +1,1636 @@
+/* Estilo "arcade" para el Pong */
+
+/* Fuente arcade retro embebida (Press Start 2P, SIL Open Font License 1.1).
+   Va como archivo local para conservar el modo offline de la PWA. */
+@font-face {
+  font-family: 'Press Start 2P';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/press-start-2p.woff2') format('woff2');
+}
+
+/* Colores del tema (accent), personalizables desde 🎨 Personalizar */
+:root {
+  --accent: #7cfc00;
+  --accent-rgb: 124, 252, 0;
+  /* Acento del HUD (marcador): SIEMPRE neón, incluso en modo claro, porque el
+     marcador es un panel oscuro de recreativa. No se sobrescribe en body.light. */
+  --hud-accent: #7cfc00;
+  --hud-accent-rgb: 124, 252, 0;
+  /* Tipografías: UI legible, display redondeado y arcade pixelada para lo "de marca" */
+  --font-ui: 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
+  --font-display: 'Arial Rounded MT Bold', 'Trebuchet MS', 'Segoe UI', Verdana, sans-serif;
+  --font-arcade: 'Press Start 2P', 'Arial Rounded MT Bold', 'Trebuchet MS', Verdana, monospace;
+}
+
+body.palette-verde { --accent: #7cfc00; --accent-rgb: 124, 252, 0; --hud-accent: #7cfc00; --hud-accent-rgb: 124, 252, 0; }
+body.palette-azul  { --accent: #4da6ff; --accent-rgb: 77, 166, 255; --hud-accent: #4da6ff; --hud-accent-rgb: 77, 166, 255; }
+body.palette-ambar { --accent: #ffb020; --accent-rgb: 255, 176, 32; --hud-accent: #ffb020; --hud-accent-rgb: 255, 176, 32; }
+body.palette-rosa  { --accent: #ff4dd8; --accent-rgb: 255, 77, 216; --hud-accent: #ff4dd8; --hud-accent-rgb: 255, 77, 216; }
+
+/* En modo claro usamos versiones oscuras pero vivas y saturadas del acento,
+   elegidas para que el texto blanco siga siendo legible (contraste AA ≥ 4.5:1). */
+body.light.palette-verde { --accent: #14802a; --accent-rgb: 20, 128, 42; }
+body.light.palette-azul  { --accent: #0f5fcf; --accent-rgb: 15, 95, 207; }
+body.light.palette-ambar { --accent: #b85e00; --accent-rgb: 184, 94, 0; }
+body.light.palette-rosa  { --accent: #d21f66; --accent-rgb: 210, 31, 102; }
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 40%, #14142b, #050508);
+  color: #f5f5f5;
+  font-family: var(--font-ui);
+}
+
+/* Pantalla de bienvenida (splash) de la PWA */
+.splash {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: #0a0a0f;
+  color: #f5f5f5;
+  font-family: var(--font-ui);
+  text-align: center;
+  transition: opacity 0.5s ease;
+}
+
+.splash.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash-icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  image-rendering: pixelated;
+  animation: splash-bounce 0.7s cubic-bezier(0.28, 0.84, 0.42, 1);
+}
+
+.splash-logo {
+  font-size: 3rem;
+  letter-spacing: 0.15em;
+  font-family: var(--font-arcade);
+  font-weight: 400;
+  /* compensa el hueco fantasma del letter-spacing para que la pelota rebote
+     justo en la "G" y no en el espacio vacío posterior */
+  margin-right: -0.15em;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent), 0 0 24px var(--accent);
+  animation:
+    splash-blink 1.2s steps(1, end) both,
+    splash-glow 2.2s ease-in-out 1.2s infinite;
+}
+
+/* Contenedor del logo + la pelota que "juega al pong" sobre él */
+.splash-logo-wrap {
+  position: relative;
+  display: inline-block;
+}
+
+/* La pelota rebota entre la "P" y la "G" del logo, como si fueran palas */
+.splash-ball {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  margin-top: -5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #ffffff;
+  box-shadow: 0 0 8px rgba(255, 255, 255, 0.7);
+  animation: splash-pong-ball 1.8s ease-in-out infinite;
+}
+
+@keyframes splash-pong-ball {
+  0%   { left: 0;                 transform: scale(1.15, 0.8); }
+  8%   { transform: scale(1, 1); }
+  50%  { left: calc(100% - 10px); transform: scale(1.15, 0.8); }
+  58%  { transform: scale(1, 1); }
+  100% { left: 0;                 transform: scale(1.15, 0.8); }
+}
+
+/* Barra de progreso de carga (sustituye al texto "Cargando…") */
+.splash-progress {
+  width: 180px;
+  height: 6px;
+  margin-top: 0.5rem;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.splash-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+  border-radius: 3px;
+}
+
+/* Entrada del icono: rebota cayendo desde arriba */
+@keyframes splash-bounce {
+  0%   { transform: translateY(-70px) scale(0.6); opacity: 0; }
+  55%  { transform: translateY(10px) scale(1.08); opacity: 1; }
+  75%  { transform: translateY(-5px) scale(0.97); }
+  100% { transform: translateY(0) scale(1); }
+}
+
+/* Parpadeo de neón del logo: se enciende con varios destellos */
+@keyframes splash-blink {
+  0%   { opacity: 0; }
+  8%   { opacity: 1; }
+  14%  { opacity: 0.15; }
+  20%  { opacity: 1; }
+  28%  { opacity: 0.35; }
+  36%  { opacity: 1; }
+  100% { opacity: 1; }
+}
+
+/* Pulso suave del resplandor, tras el parpadeo inicial */
+@keyframes splash-glow {
+  0%, 100% { text-shadow: 0 0 8px var(--accent), 0 0 24px var(--accent); }
+  50%      { text-shadow: 0 0 12px var(--accent), 0 0 40px var(--accent), 0 0 60px var(--accent); }
+}
+
+.game {
+  text-align: center;
+  width: 100%;
+  max-width: 800px;
+  padding: 12px;
+}
+
+.title {
+  margin: 0 0 1rem;
+  font-size: 3rem;
+  letter-spacing: 0.15em;
+  font-family: var(--font-arcade);
+  font-weight: 400; /* la fuente arcade solo tiene peso 400; evita la falsa negrita */
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent), 0 0 24px var(--accent);
+  animation: title-glow 3s ease-in-out infinite;
+}
+
+@keyframes title-glow {
+  0%, 100% { text-shadow: 0 0 8px var(--accent), 0 0 24px var(--accent); }
+  50%      { text-shadow: 0 0 12px var(--accent), 0 0 40px var(--accent), 0 0 64px var(--accent); }
+}
+
+.scoreboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  width: 100%;
+  margin: 0 auto 0.75rem;
+}
+
+.score {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  flex: 1;
+  max-width: 240px;
+  padding: 0.7rem 1rem 0.8rem;
+  background: #0b0b13;                   /* HUD oscuro de recreativa */
+  border: 2px solid var(--hud-accent);    /* borde duro del color del tema, esquinas rectas */
+  border-radius: 0;
+  box-shadow: 0 0 18px rgba(var(--hud-accent-rgb), 0.22), inset 0 0 12px rgba(var(--hud-accent-rgb), 0.08);
+}
+
+/* Barra superior brillante del color del tema (borde duro, sin redondeo) */
+.score::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: 14px;
+  right: 14px;
+  height: 3px;
+  border-radius: 0;
+  background: var(--hud-accent);
+  box-shadow: 0 0 10px var(--hud-accent), 0 0 22px var(--hud-accent);
+}
+
+.score .label {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--hud-accent);
+  text-shadow: 0 0 8px rgba(var(--hud-accent-rgb), 0.5);
+}
+
+.score .value {
+  font-size: 2.8rem;
+  font-weight: 400;
+  font-family: var(--font-arcade);
+  line-height: 1;
+  color: #ffffff;
+  /* Sombra escalonada (staircase) sin desenfoque + resplandor neón */
+  text-shadow:
+    1px 1px 0 var(--hud-accent),
+    2px 2px 0 var(--hud-accent),
+    3px 3px 0 var(--hud-accent),
+    0 0 12px rgba(var(--hud-accent-rgb), 0.7),
+    0 0 28px rgba(var(--hud-accent-rgb), 0.4);
+}
+
+/* Jugador que va ganando: tarjeta y barra con brillo más intenso */
+.score.leading {
+  border-color: var(--hud-accent);
+  box-shadow: 0 0 30px rgba(var(--hud-accent-rgb), 0.55), inset 0 0 18px rgba(var(--hud-accent-rgb), 0.2);
+}
+
+.score.leading::before {
+  left: 8px;
+  right: 8px;
+}
+
+/* Pequeño "pop" al actualizar la puntuación */
+.score .value.pop {
+  animation: score-pop 0.35s ease-out;
+}
+
+@keyframes score-pop {
+  0%   { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}
+
+/* Insignia "VS" en rombo */
+.vs {
+  position: relative;
+  flex: none;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-arcade);
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  color: var(--accent);
+  text-shadow: 0 0 8px var(--accent);
+  z-index: 1;
+}
+
+.vs::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border-radius: 8px;
+  border: 2px solid var(--accent);
+  background: rgba(var(--accent-rgb), 0.12);
+  transform: rotate(45deg);
+  box-shadow: 0 0 14px rgba(var(--accent-rgb), 0.35), inset 0 0 10px rgba(var(--accent-rgb), 0.2);  z-index: -1;
+}
+
+/* Insignia con la dificultad de la IA (solo visible durante la partida) */
+.difficulty-badge {
+  width: fit-content;
+  margin: 0 auto 0.75rem;
+  padding: 0.25rem 0.9rem;
+  font-family: var(--font-arcade);
+  font-size: 0.6rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #ffffff;
+  background: #0b0b13;
+  border: 1px solid var(--hud-accent);
+  box-shadow: 0 0 10px rgba(var(--hud-accent-rgb), 0.3);
+}
+
+
+/* Indicador de punto de partido (a un punto de ganar la partida) */
+
+.game-point {
+  margin: 0 auto 0.75rem;
+  font-size: 1rem;
+  font-weight: bold;
+  color: #ffd54a;
+  text-shadow: 0 0 10px rgba(255, 213, 74, 0.6);
+  animation: game-point-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes game-point-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Color de logro para la racha (usado en el modal de estadísticas) */
+.stats-streak {
+  color: #ffb020;
+}
+
+/* Contenedor del lienzo y de la pantalla superpuesta */
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 8 / 5; /* misma proporción que el lienzo (800 x 500) */
+  border-radius: 20px; /* curvatura sutil de monitor de tubo */
+}
+
+/* Filtro CRT: líneas de scanline + viñeta sobre todo el tablero (monitor de tubo) */
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none; /* no bloquea clics ni el arrastre táctil */
+  border-radius: inherit;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.22) 2px,
+      rgba(0, 0, 0, 0.22) 3px
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(var(--accent-rgb), 0.10) 0%,
+      rgba(var(--accent-rgb), 0.04) 45%,
+      rgba(0, 0, 0, 0) 70%
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 45%,
+      rgba(0, 0, 0, 0.35) 75%,
+      rgba(0, 0, 0, 0.7) 100%
+    );
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.55);
+  /* Capa propia: el filtro se rasteriza una sola vez y no se repinta cada
+     fotograma. Sin esto, las sombras y degradados ralentizan mucho el juego
+     en pantalla completa (donde el tablero es mucho más grande). */
+  transform: translateZ(0);
+}
+
+/* Vibración al marcar un punto */
+@keyframes shake {
+  0%, 100% { transform: translate(0, 0); }
+  20% { transform: translate(-6px, 3px); }
+  40% { transform: translate(6px, -3px); }
+  60% { transform: translate(-4px, -2px); }
+  80% { transform: translate(4px, 2px); }
+}
+
+@keyframes shake-big {
+  0%, 100% { transform: translate(0, 0); }
+  15% { transform: translate(-12px, 6px); }
+  30% { transform: translate(12px, -6px); }
+  45% { transform: translate(-8px, 4px); }
+  60% { transform: translate(8px, -4px); }
+  75% { transform: translate(-4px, 2px); }
+}
+
+/* Vibración sutil al golpear la pelota con la pala.
+   La amplitud se controla con --hit-amp (la fija JavaScript según la velocidad). */
+@keyframes shake-hit {
+  0%, 100% { transform: translate(0, 0); }
+  25% { transform: translate(calc(var(--hit-amp, 2px) * -1), calc(var(--hit-amp, 2px) * 0.5)); }
+  50% { transform: translate(var(--hit-amp, 2px), calc(var(--hit-amp, 2px) * -0.5)); }
+  75% { transform: translate(calc(var(--hit-amp, 2px) * -0.5), 0); }
+}
+
+.stage.shake {
+  animation: shake 0.35s ease-in-out;
+}
+
+.stage.shake-big {
+  animation: shake-big 0.5s ease-in-out;
+}
+
+.stage.shake-hit {
+  animation: shake-hit 0.12s ease-out;
+}
+
+canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: #0a0a0f;
+  border: 2px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px; /* sigue la curvatura del monitor */
+  box-shadow:
+    0 0 30px rgba(var(--accent-rgb), 0.25),
+    0 0 60px rgba(var(--accent-rgb), 0.15);
+  touch-action: none;
+  /* El re-escalado CSS final también usa vecino más cercano,
+     para mantener el aspecto pixelado nítido en vez de suavizarlo. */
+  image-rendering: -moz-crisp-edges;          /* Firefox */
+  image-rendering: -webkit-optimize-contrast; /* Safari / Chrome antiguo */
+  image-rendering: pixelated;                 /* estándar */
+  image-rendering: crisp-edges;               /* fallback */
+}
+
+/* Pantalla de inicio / fin de partida */
+.overlay {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit; /* sigue la curvatura del monitor */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(5, 5, 10, 0.85);
+}
+
+.overlay.hidden {
+  display: none;
+}
+
+.overlay-title {
+  margin: 0;
+  font-size: 2.5rem;
+  font-family: var(--font-display);
+  font-weight: bold;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent);
+}
+
+/* Subrayado neón decorativo bajo el título de los menús */
+.overlay-title::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 2px;
+  margin: 0.5rem auto 0;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+.overlay-subtitle {
+  margin: 0;
+  font-size: 1.1rem;
+  opacity: 0.9;
+}
+
+.button {
+  margin-top: 1rem;
+  padding: 0.6rem 1.5rem;
+  font-family: inherit;
+  font-size: 1rem;
+  letter-spacing: 0.1em;
+  text-align: center;
+  text-indent: 0.1em; /* compensa el hueco del letter-spacing para centrar el texto */
+  color: #050508;
+  background: var(--accent);
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.6);
+}
+
+.button:hover {
+  filter: brightness(1.15);
+  transform: translateY(-1px);
+}
+
+/* Botones secundarios del menú: estilo "fantasma" con borde sutil, para que
+   JUGAR (con relleno) siga siendo el único protagonista. */
+.button-outline {
+  color: var(--accent);
+  background-color: transparent;
+  border: 1px solid var(--accent);
+  box-shadow: none;
+}
+
+.button-outline:hover {
+  filter: drop-shadow(0 0 5px rgba(var(--accent-rgb), 0.45));
+  background-color: rgba(var(--accent-rgb), 0.14);
+  transform: translateY(-1px);
+}
+
+/* Al pulsar, los botones fantasma se hunden 1px (el mismo feedback que JUGAR).
+   Usamos doble clase para ganar en especificidad a la regla genérica
+   `.button:active` (que aplica scale) y al hover. */
+.button.button-outline:active {
+  transform: translateY(1px);
+  filter: brightness(0.9);
+}
+
+/* Botón secundario tipo enlace (para acciones extra del menú) */
+.link-button {
+  margin-top: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  text-indent: 0.05em;
+  color: var(--accent);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.link-button:hover {
+  filter: brightness(1.2);
+}
+
+/* Menú principal y pantalla de configuración */
+#menu-main,
+#menu-setup {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+#menu-main.hidden,
+#menu-setup.hidden {
+  display: none;
+}
+
+/* Botón principal "Jugar": más grande y con brillo pulsante para destacar
+   sobre las acciones secundarias (Controles / Estadísticas). */
+#menu-main > .button {
+  margin-top: 0.25rem;
+  padding: 0.85rem 2.6rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-indent: 0.16em;
+  text-transform: uppercase;
+  border-radius: 10px;
+  animation: jugar-glow 2.4s ease-in-out infinite;
+}
+
+@keyframes jugar-glow {
+  0%, 100% {
+    box-shadow: 0 0 18px rgba(var(--accent-rgb), 0.75), 0 0 40px rgba(var(--accent-rgb), 0.35);
+  }
+  50% {
+    box-shadow: 0 0 26px rgba(var(--accent-rgb), 0.9), 0 0 60px rgba(var(--accent-rgb), 0.5);
+  }
+}
+
+/* Al pasar el ratón por JUGAR, el brillo se intensifica (además de elevarse) */
+#menu-main > .button:hover {
+  filter: brightness(1.25) drop-shadow(0 0 10px rgba(var(--accent-rgb), 0.85));
+  transform: translateY(-2px);
+}
+
+/* Al pulsar JUGAR, el botón se hunde 1px para dar feedback táctil.
+   Tiene más especificidad que :hover para ganarle mientras se mantiene pulsado. */
+#menu-main > .button:active {
+  transform: translateY(1px);
+  filter: brightness(0.95);
+}
+
+.menu-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  margin-top: 0.9rem;
+}
+
+.menu-links .button {
+  margin-top: 0;
+  padding: 0.6rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+/* Selector de color de las palas */
+.color-options {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  margin: 0.5rem 0;
+}
+
+.color-swatch {
+  width: 32px;
+  height: 32px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.color-swatch:hover {
+  border-color: #ffffff;
+}
+
+.color-swatch.selected {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.8);
+}
+
+/* Swatch "Por defecto": mitad blanco / mitad oscuro para indicar que sigue el tema */
+.color-swatch.theme-swatch {
+  background: linear-gradient(135deg, #ffffff 50%, #1a1a24 50%);
+}
+
+kbd {
+  padding: 0.15rem 0.4rem;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-bottom-width: 3px;
+  border-radius: 4px;
+  background: #1a1a24;
+}
+
+/* Iconos CSS minimalistas (dibujados con el color del tema, sin emojis).
+   Todos usan currentColor, que hereda de --accent vía la clase .icon. */
+.icon {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  vertical-align: middle;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* Casa simple (volver al menú): tejado triangular y cuerpo rellenos */
+.icon-home {
+  width: 1.2em;
+  height: 1em;
+}
+.icon-home::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 0.6em solid transparent;
+  border-right: 0.6em solid transparent;
+  border-bottom: 0.45em solid currentColor;
+}
+.icon-home::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.72em;
+  height: 0.55em;
+  background: currentColor;
+  border-radius: 0 0 2px 2px;
+}
+
+/* Pausa (dos barras) */
+.icon-pause {
+  width: 0.85em;
+  height: 1em;
+  border-left: 0.28em solid currentColor;
+  border-right: 0.28em solid currentColor;
+}
+
+/* Nota musical */
+.icon-note {
+  width: 0.6em;
+  height: 1em;
+  border-left: 0.13em solid currentColor;
+}
+.icon-note::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0.5em;
+  height: 0.34em;
+  background: currentColor;
+  border-radius: 0 0 0.2em 0.2em;
+}
+.icon-note::after {
+  content: '';
+  position: absolute;
+  top: 0.02em;
+  left: 0.13em;
+  width: 0.3em;
+  height: 0.22em;
+  border-top: 0.11em solid currentColor;
+  border-right: 0.11em solid currentColor;
+  border-radius: 0 0.25em 0 0;
+}
+
+/* Ráfaga / efectos (destello de 8 puntas) */
+.icon-burst {
+  width: 1em;
+  height: 1em;
+}
+.icon-burst::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 0.18em;
+  height: 0.18em;
+  background: currentColor;
+  box-shadow:
+    -0.32em 0 0 currentColor, 0.32em 0 0 currentColor,
+    0 -0.32em 0 currentColor, 0 0.32em 0 currentColor,
+    -0.22em -0.22em 0 currentColor, 0.22em 0.22em 0 currentColor,
+    0.22em -0.22em 0 currentColor, -0.22em 0.22em 0 currentColor;
+}
+
+/* Descarga (instalar la PWA) */
+.icon-download {
+  width: 1em;
+  height: 1em;
+  border-bottom: 0.12em solid currentColor;
+}
+.icon-download::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 0.1em;
+  transform: translateX(-50%);
+  width: 0.13em;
+  height: 0.62em;
+  background: currentColor;
+  border-radius: 1px;
+}
+.icon-download::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0.02em;
+  transform: translateX(-50%) rotate(45deg);
+  width: 0.34em;
+  height: 0.34em;
+  border-right: 0.13em solid currentColor;
+  border-bottom: 0.13em solid currentColor;
+}
+
+/* Contenido de botón con icono + texto alineados (p. ej. Instalar) */
+.btn-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+/* El botón Instalar lleva icono + texto en una fila flex: no le aplicamos el
+   text-indent de compensación para no desplazar el conjunto. */
+#install-btn {
+  text-indent: 0;
+}
+
+/* Filas de volumen dentro del modal "Sonido" */
+.sound-rows {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.volume-row-icon {
+  min-width: 1.4em;
+  text-align: center;
+}
+
+.volume-slider {
+  width: 120px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* Botón ON/OFF de la música de fondo */
+.volume-toggle {
+  padding: 0.15rem 0.4rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+  font-weight: bold;
+  color: #050508;
+  background: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.volume-toggle.off {
+  color: #f5f5f5;
+  background: #1a1a24;
+  border-color: rgba(255, 255, 255, 0.25);
+}
+
+/* Selector de modo de juego (en la pantalla de inicio) */
+.mode-selector {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.25rem;
+}
+
+/* Selector de dificultad (solo visible en modo IA) */
+.difficulty-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.difficulty-label {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+/* Descripción corta del comportamiento de la IA en cada dificultad */
+.difficulty-desc {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+/* Selector de lado del jugador (solo visible en modo IA) */
+.side-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de puntos para ganar (1, 3 o 5) */
+.bestof-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de nombres de los jugadores */
+.names-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de tema musical */
+.theme-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de paleta de color */
+.palette-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* Selector de tema claro/oscuro */
+.theme-mode-selector {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.name-input {
+  width: 110px;
+  padding: 0.35rem 0.5rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.name-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.4);
+}
+
+/* Botón para restablecer todos los ajustes guardados */
+.reset-all-button {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: #ffd54a;
+  background: transparent;
+  border: 1px solid #ffd54a;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.reset-all-button:hover {
+  background: rgba(255, 213, 74, 0.15);
+}
+
+.selector-label {
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
+.mode-button {
+  padding: 0.5rem 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.05em;
+  text-align: center;
+  text-indent: 0.05em;
+  color: #f5f5f5;
+  background: #1a1a24;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.mode-button.selected {
+  color: #050508;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+
+/* Foco visible para navegación con teclado (accesibilidad).
+   :focus-visible solo aparece al navegar con teclado, no al hacer clic. */
+button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.volume-slider:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Transiciones suaves en los elementos interactivos (tacto más profesional) */
+.button,
+.link-button,
+.mode-button,
+.volume-toggle,
+.color-swatch,
+.reset-all-button,
+.touch-btn,
+.name-input {
+  transition: background-color 0.15s ease, border-color 0.15s ease,
+    color 0.15s ease, filter 0.15s ease, box-shadow 0.15s ease,
+    transform 0.1s ease;
+}
+
+/* Retroalimentación al pulsar los botones principales */
+.button:active,
+.mode-button:active {
+  transform: scale(0.97);
+}
+
+/* Utilidad para ocultar elementos */
+.hidden {
+  display: none;
+}
+
+/* Controles táctiles para móvil */
+.touch-controls {
+  display: none; /* solo se muestran en pantallas táctiles o muy estrechas */
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.touch-hint {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.touch-btn {
+  min-width: 56px;
+  min-height: 56px;
+  font-size: 1.4rem;
+  font-family: inherit;
+  color: #f5f5f5;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-btn:active {
+  background: rgba(var(--accent-rgb), 0.25);
+}
+
+.touch-pause {
+  min-width: 64px;
+}
+
+@media (hover: none) and (pointer: coarse), (max-width: 700px) {
+  .touch-controls {
+    display: flex;
+  }
+}
+
+/* Ajustes de tamaño en pantallas pequeñas */
+@media (max-width: 600px) {
+  .title {
+    font-size: 2rem;
+    letter-spacing: 0.25em;
+  }
+
+  .score .value {
+    font-size: 1.8rem;
+  }
+
+  .score .label {
+    font-size: 0.75rem;
+  }
+
+  .vs {
+    width: 44px;
+    height: 44px;
+    font-size: 0.68rem;
+  }
+
+  .overlay-title {
+    font-size: 1.8rem;
+  }
+
+  .overlay-subtitle {
+    font-size: 0.9rem;
+  }
+
+  .mode-button {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.85rem;
+  }
+
+  .button {
+    margin-top: 0.5rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  #menu-main > .button {
+    padding: 0.7rem 2rem;
+    font-size: 1.1rem;
+  }
+
+  .overlay {
+    gap: 0.35rem;
+    padding: 4px;
+  }
+
+  .mode-selector,
+  .difficulty-selector,
+  .side-selector,
+  .bestof-selector,
+  .names-selector,
+  .theme-selector,
+  .palette-selector,
+  .theme-mode-selector {
+    margin-top: 0.25rem;
+  }
+
+  .name-input {
+    width: 90px;
+  }
+}
+
+/* Aviso de orientación para móvil */
+.rotate-hint {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  font-size: 0.9rem;
+  background: rgba(var(--accent-rgb), 0.95);
+  color: #050508;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+}
+
+.rotate-hint-close {
+  margin-left: 4px;
+  padding: 0 6px;
+  font-size: 1rem;
+  line-height: 1;
+  font-family: inherit;
+  color: inherit;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.rotate-hint.dismissed {
+  display: none;
+}
+
+/* Solo se muestra en móvil (táctil) y en orientación vertical */
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+  .rotate-hint {
+    display: flex;
+  }
+}
+
+/* Aviso temporal (toast) */
+.toast {
+  position: fixed;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  background: rgba(20, 20, 35, 0.95);
+  color: #f5f5f5;
+  border: 1px solid rgba(var(--accent-rgb), 0.5);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  white-space: nowrap;
+  animation: toast-in 0.2s ease-out;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 8px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Confeti de celebración en la pantalla de victoria */
+.confetti {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 25;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -20px;
+  border-radius: 2px;
+  animation: confetti-fall linear forwards;
+}
+
+@keyframes confetti-fall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(110vh) rotate(720deg); opacity: 0.85; }
+}
+
+/* Explosión en el punto exacto donde la pelota marca el último punto */
+.explosion {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 26;
+}
+
+.goal-flash {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  margin: -12px 0 0 -12px;
+  border-radius: 50%;
+  background: var(--flash-color, #fff);
+  box-shadow: 0 0 40px 14px var(--flash-color, #fff);
+  animation: goal-flash-pop 0.5s ease-out forwards;
+}
+
+@keyframes goal-flash-pop {
+  0% { transform: scale(0.3); opacity: 1; }
+  100% { transform: scale(4); opacity: 0; }
+}
+
+.goal-spark {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  margin: -2.5px 0 0 -2.5px;
+  border-radius: 1px;
+  animation: goal-spark-fly 0.7s ease-out forwards;
+}
+
+@keyframes goal-spark-fly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx, 0), var(--dy, 0)) scale(0.3); opacity: 0; }
+}
+
+/* Pantalla de estadísticas (modal) */
+.stats-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(5, 5, 10, 0.85);
+}
+
+.stats-modal.hidden {
+  display: none;
+}
+
+.stats-panel {
+  width: 100%;
+  max-width: 440px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 1.5rem;
+  text-align: center;
+  background: #14142b;
+  border: 1px solid rgba(var(--accent-rgb), 0.4);
+  border-radius: 10px;
+  box-shadow: 0 0 30px rgba(var(--accent-rgb), 0.25);
+}
+
+.stats-panel h2 {
+  margin: 0 0 0.6rem;
+  font-family: var(--font-arcade);
+  font-weight: 400;
+  letter-spacing: 0.12em;
+  text-indent: 0.12em; /* compensa el hueco final del letter-spacing al centrar */
+  text-transform: uppercase;
+  color: var(--accent);
+  text-shadow: 0 0 10px var(--accent);
+}
+
+/* Subrayado neón decorativo bajo el título de los modales (igual que el menú) */
+.stats-panel h2::after {
+  content: '';
+  display: block;
+  width: 64px;
+  height: 2px;
+  margin: 0.5rem auto 0;
+  background: var(--accent);
+  box-shadow: 0 0 8px var(--accent);
+}
+
+/* Botones de acción del modal de estadísticas */
+.stats-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+}
+
+.stats-actions .button {
+  margin-top: 0;
+}
+
+.stats-group h3 {
+  margin: 0.9rem 0 0.25rem;
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.stats-row {
+  margin: 0.25rem 0;
+  font-size: 0.95rem;
+}
+
+/* --- Resumen de estadísticas: tarjetas, barras de porcentaje y chips --- */
+
+/* Cuadrícula 2x2 de tarjetas con los números clave */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+  margin-top: 1rem;
+}
+
+.stat-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.75rem 0.5rem;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(var(--accent-rgb), 0.25);
+  border-radius: 8px;
+}
+
+.stat-value {
+  font-family: var(--font-arcade);
+  font-size: 1.35rem;
+  line-height: 1.2;
+  color: #ffffff;
+  text-shadow: 0 0 8px rgba(var(--accent-rgb), 0.55);
+}
+
+.stat-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.stat-sub {
+  font-size: 0.6rem;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+/* Victorias en verde y derrotas en rojo: lectura de un vistazo */
+.stat-tile-win .stat-value { color: #7dff9a; }
+.stat-tile-loss .stat-value { color: #ff8a8a; }
+
+/* Tarjeta del mejor resultado */
+.stats-best-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.2rem;
+  margin-top: 0.6rem;
+  padding: 0.6rem;
+  background: rgba(255, 213, 74, 0.08);
+  border: 1px solid rgba(255, 213, 74, 0.35);
+  border-radius: 8px;
+}
+
+.stats-best-card .stat-label { color: #ffd54a; }
+
+.stats-best-card .stat-value {
+  color: #ffd54a;
+  text-shadow: 0 0 10px rgba(255, 213, 74, 0.5);
+}
+
+/* Barra de porcentaje de victorias */
+.stat-bar {
+  width: 100%;
+  height: 10px;
+  margin: 0.35rem 0 0.4rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  width: 0;
+  height: 100%;
+  background: var(--accent);
+  box-shadow: 0 0 8px rgba(var(--accent-rgb), 0.7);
+  border-radius: 5px;
+  transition: width 0.35s ease;
+}
+
+.stat-bar-caption {
+  margin: 0.15rem 0;
+  font-size: 0.85rem;
+  color: #e6e6ee;
+}
+
+.stat-bar-percent {
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Chips de la mejor racha por dificultad */
+.streak-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.35rem;
+}
+
+.streak-chip {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: inherit;
+  background: rgba(255, 176, 32, 0.1);
+  border: 1px solid rgba(255, 176, 32, 0.4);
+  border-radius: 999px;
+}
+
+/* Panel de controles: texto alineado a la izquierda para leerlo mejor */
+.controls-panel {
+  text-align: left;
+}
+
+.controls-panel h2 {
+  text-align: center;
+}
+
+/* Accesibilidad: si el sistema pide menos movimiento, reducimos las animaciones */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== Modo claro: fondo y superficies claras.
+   El tablero (lienzo) sigue oscuro, como una pantalla retro. ===== */
+body.light {
+  background: radial-gradient(circle at 50% 40%, #ffffff, #d7d7e0);
+  color: #1a1a24;
+}
+
+body.light .splash {
+  background: #f4f4f7;
+  color: #1a1a24;
+}
+
+body.light .splash-ball {
+  background: #1a1a24;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.35);
+}
+
+body.light .splash-progress {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+body.light .overlay {
+  background: rgba(247, 247, 250, 0.92);
+}
+
+body.light .mode-button,
+body.light .name-input {
+  background: #ffffff;
+  color: #1a1a24;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light .mode-button.selected,
+body.light .button,
+body.light .volume-toggle,
+body.light .rotate-hint {
+  color: #ffffff; /* texto blanco sobre el acento oscuro */
+}
+
+/* Los botones fantasma usan el acento (oscuro en modo claro), no blanco */
+body.light .button-outline {
+  color: var(--accent);
+}
+
+/* En modo claro, el botón seleccionado debe pintarse con el acento de forma
+   explícita: la regla "body.light .mode-button" (fondo blanco) tiene más
+   especificidad que ".mode-button.selected", y sin esto el texto quedaba
+   blanco sobre fondo blanco (el color del tema "desaparecía"). */
+body.light .mode-button.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(var(--accent-rgb), 0.5);
+}
+
+body.light .volume-toggle.off {
+  background: #ffffff;
+  color: #1a1a24;
+  border-color: rgba(0, 0, 0, 0.25);
+}
+
+body.light .stats-panel {
+  background: #ffffff;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light .stats-modal {
+  background: rgba(240, 240, 245, 0.9);
+}
+
+body.light .toast {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1a1a24;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+body.light kbd {
+  background: #ececf2;
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+
+body.light .touch-btn {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: rgba(0, 0, 0, 0.25);
+  color: #1a1a24;
+}
+
+body.light .color-swatch {
+  border-color: rgba(0, 0, 0, 0.3);
+}
+
+body.light canvas {
+  background: #e9ecf3;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+/* CRT en modo claro: scanlines y viñeta más suaves para no ensuciar el tablero claro */
+body.light .stage::after {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0) 0px,
+      rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.09) 2px,
+      rgba(0, 0, 0, 0.09) 3px
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(var(--accent-rgb), 0.08) 0%,
+      rgba(var(--accent-rgb), 0.03) 45%,
+      rgba(0, 0, 0, 0) 70%
+    ),
+    radial-gradient(
+      ellipse at center,
+      rgba(0, 0, 0, 0) 60%,
+      rgba(0, 0, 0, 0.16) 100%
+    );
+  box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.15);
+}
+
+/* Colores "de logro" más oscuros para que se lean sobre fondo claro */
+body.light .stats-streak { color: #b26a00; }
+body.light .game-point {
+  color: #b26a00;
+  text-shadow: 0 0 10px rgba(178, 106, 0, 0.35);
+}
+body.light .reset-all-button {
+  color: #b26a00;
+  border-color: #b26a00;
+}
+
+/* Tarjetas y barras de estadísticas en modo claro (panel blanco) */
+body.light .stat-tile {
+  background: rgba(0, 0, 0, 0.04);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+body.light .stat-value {
+  color: #1a1a24;
+  text-shadow: none;
+}
+
+body.light .stat-sub {
+  color: rgba(0, 0, 0, 0.5);
+}
+
+body.light .stat-tile-win .stat-value { color: #1d7a35; }
+body.light .stat-tile-loss .stat-value { color: #c62828; }
+
+body.light .stats-best-card {
+  background: rgba(178, 106, 0, 0.08);
+  border-color: rgba(178, 106, 0, 0.35);
+}
+
+body.light .stats-best-card .stat-value {
+  color: #a16207;
+  text-shadow: none;
+}
+
+body.light .stat-bar {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+body.light .stat-bar-caption {
+  color: #33333d;
+}
+
+body.light .streak-chip {
+  background: rgba(178, 106, 0, 0.08);
+  border-color: rgba(178, 106, 0, 0.4);
+}

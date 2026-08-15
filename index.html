@@ -3,30 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Pong clásico en HTML, CSS y JavaScript puro. Juega contra un amigo o contra la IA, instalable como PWA.">
   <title>Pong</title>
+
+  <!-- Icono de la pestaña (favicon): 32px ligero para la carga y 192px como respaldo -->
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/icons/icon-32.png">
+  <link rel="icon" type="image/png" sizes="192x192" href="assets/icons/icon-192.png">
 
   <!-- PWA -->
   <link rel="manifest" href="manifest.webmanifest">
   <meta name="theme-color" content="#7cfc00">
 
-  <!-- iOS / pantalla completa -->
-  <link rel="apple-touch-icon" href="icon-180.png">
+  <!-- iOS / pantalla completa. Los tamaños correctos por dispositivo:
+       152 = iPad/iPad mini, 167 = iPad Pro, 180 = iPhone. -->
+  <link rel="apple-touch-icon" sizes="152x152" href="assets/icons/icon-152-ios.png">
+  <link rel="apple-touch-icon" sizes="167x167" href="assets/icons/icon-167-ios.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/icons/icon-180-ios.png">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="Pong">
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
   <!-- Pantalla de bienvenida (splash) que se muestra al abrir la app -->
   <div id="splash" class="splash">
-    <img class="splash-icon" src="icon-192.png" alt="Icono de Pong" width="96" height="96">
-    <div class="splash-logo">PONG</div>
-    <div class="splash-sub">Cargando…</div>
+    <img class="splash-icon" src="assets/icons/icon-96.png" alt="Icono de Pong" width="96" height="96">
+    <div class="splash-logo-wrap" aria-hidden="true">
+      <div class="splash-logo">PONG</div>
+      <span class="splash-ball"></span>
+    </div>
+    <div id="splash-progress" class="splash-progress" role="progressbar" aria-label="Cargando" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+      <div id="splash-bar" class="splash-bar"></div>
+    </div>
   </div>
 
   <div id="rotate-hint" class="rotate-hint">
-    <span>📱 Gira el móvil a horizontal para jugar mejor</span>
+    <span>Gira el móvil a horizontal para jugar mejor</span>
     <button id="rotate-hint-close" class="rotate-hint-close" type="button" aria-label="Cerrar">✕</button>
   </div>
 
@@ -38,25 +51,16 @@
         <span id="label1" class="label">Jugador 1</span>
         <span id="score1" class="value">0</span>
       </div>
+      <span class="vs">VS</span>
       <div class="score">
         <span id="label2" class="label">Jugador 2</span>
         <span id="score2" class="value">0</span>
       </div>
     </div>
 
-    <div id="match-score" class="match-score hidden">Partidas: 0 - 0 (al mejor de 1)</div>
+    <div id="difficulty-badge" class="difficulty-badge hidden"></div>
 
-    <div class="stats">
-      <span class="stats-title">🏆 Victorias</span>
-      <span id="stats-p1">Jugador 1: 0</span>
-      <span class="stats-sep">·</span>
-      <span id="stats-p2">Jugador 2: 0</span>
-      <span class="stats-sep">·</span>
-      <span id="stats-best" class="stats-best">🥇 Mejor: —</span>
-      <span id="stats-streak" class="stats-streak hidden">🔥 Racha: 0 (mejor: 0)</span>
-      <button id="stats-open" class="reset-stats" type="button" title="Ver estadísticas">📊</button>
-      <button id="reset-stats" class="reset-stats" type="button" title="Borrar historial de victorias">✕</button>
-    </div>
+    <div id="game-point" class="game-point hidden">¡Punto de partido!</div>
 
     <div class="stage">
       <canvas id="game" width="800" height="500"></canvas>
@@ -69,16 +73,17 @@
         <div id="menu-main">
           <button id="menu-jugar" class="button" type="button">Jugar</button>
           <div class="menu-links">
-            <button id="menu-controles" class="link-button" type="button">🎮 Controles</button>
-            <button id="menu-estadisticas" class="link-button" type="button">📊 Estadísticas</button>
-            <button id="install-btn" class="link-button hidden" type="button">📲 Instalar</button>
+            <button id="menu-controles" class="button button-outline" type="button">Controles</button>
+            <button id="menu-estadisticas" class="button button-outline" type="button">Estadísticas</button>
+            <button id="menu-sonido" class="button button-outline" type="button">Sonido</button>
+            <button id="install-btn" class="button button-outline hidden" type="button"><span class="btn-label"><span class="icon icon-download" aria-hidden="true"></span><span>Instalar</span></span></button>
           </div>
         </div>
 
         <div id="menu-setup" class="hidden">
           <div class="mode-selector">
-            <button id="mode-pvp" class="mode-button selected" type="button">2 jugadores</button>
-            <button id="mode-ai" class="mode-button" type="button">1 jugador (vs IA)</button>
+            <button id="mode-ai" class="mode-button selected" type="button">1 jugador (vs IA)</button>
+            <button id="mode-pvp" class="mode-button" type="button">2 jugadores</button>
           </div>
           <div id="difficulty-selector" class="difficulty-selector">
             <span class="difficulty-label">Dificultad</span>
@@ -86,18 +91,19 @@
             <button id="diff-normal" class="mode-button selected" type="button">Normal</button>
             <button id="diff-dificil" class="mode-button" type="button">Difícil</button>
           </div>
-          <div id="side-selector" class="side-selector hidden">
+          <p id="difficulty-desc" class="difficulty-desc">Ritmo equilibrado. La IA sigue la pelota con algo de error.</p>
+          <div id="side-selector" class="side-selector">
             <span class="selector-label">Lado</span>
             <button id="side-left" class="mode-button selected" type="button">Izquierda</button>
             <button id="side-right" class="mode-button" type="button">Derecha</button>
           </div>
           <div class="bestof-selector">
-            <span class="selector-label">Al mejor de</span>
-            <button id="bestof-1" class="mode-button selected" type="button">1</button>
+            <span class="selector-label">Puntos para ganar</span>
+            <button id="bestof-1" class="mode-button" type="button">1</button>
             <button id="bestof-3" class="mode-button" type="button">3</button>
-            <button id="bestof-5" class="mode-button" type="button">5</button>
+            <button id="bestof-5" class="mode-button selected" type="button">5</button>
           </div>
-          <button id="menu-personalizar" class="link-button" type="button">🎨 Personalizar</button>
+          <button id="menu-personalizar" class="link-button" type="button">Personalizar</button>
           <button id="menu-volver" class="link-button" type="button">← Volver</button>
         </div>
 
@@ -106,90 +112,134 @@
     </div>
 
     <div id="touch-controls" class="touch-controls">
-      <button id="touch-pause" class="touch-btn touch-pause" aria-label="Pausa">⏸</button>
-      <button id="touch-menu" class="touch-btn" aria-label="Volver al menú">🏠</button>
+      <button id="touch-pause" class="touch-btn touch-pause" aria-label="Pausa"><span class="icon icon-pause" aria-hidden="true"></span></button>
+      <button id="touch-menu" class="touch-btn" aria-label="Volver al menú"><span class="icon icon-home" aria-hidden="true"></span></button>
       <span class="touch-hint">Arrastra por el tablero para mover tu pala</span>
     </div>
 
-    <div class="volume-control">
-      <button id="volume-btn" class="volume-btn" type="button" aria-label="Volumen" title="Volumen de música y efectos">
-        <span id="volume-icon" class="volume-icon">🔊</span>
-      </button>
-      <div id="volume-panel" class="volume-panel hidden">
-        <div class="volume-row">
-          <span class="volume-row-icon" title="Música">🎵</span>
-          <input id="music-volume" class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen de música">
-          <button id="music-toggle" class="volume-toggle" type="button" aria-pressed="true" title="Encender/apagar la música de fondo">ON</button>
-        </div>
-        <div class="volume-row">
-          <span class="volume-row-icon" title="Efectos">💥</span>
-          <input id="effects-volume" class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen de efectos">
-        </div>
-      </div>
-    </div>
-    <button id="fullscreen" class="icon-button" aria-label="Pantalla completa" title="Pantalla completa">⛶</button>
-    <button id="menu" class="icon-button" aria-label="Volver al menú" title="Volver al menú">🏠</button>
-    <span id="gamepad-indicator" class="gamepad-indicator" title="Sin mando conectado">🎮</span>
   </main>
 
   <div id="stats-modal" class="stats-modal hidden">
     <div class="stats-panel" role="dialog" aria-modal="true" aria-labelledby="stats-title">
-      <h2 id="stats-title">📊 Estadísticas</h2>
-      <p id="stats-total" class="stats-row stats-total"></p>
-      <p id="stats-winloss" class="stats-row stats-winloss"></p>
-      <p id="stats-time" class="stats-row stats-time"></p>
-      <p id="stats-best-line" class="stats-row stats-best"></p>
-      <div class="stats-group">
-        <h3>🤖 Contra la IA</h3>
-        <p id="stats-ia-line" class="stats-row"></p>
-        <p id="stats-ia-percent" class="stats-row"></p>
-        <p id="stats-best-streaks" class="stats-row stats-streak"></p>
+      <h2 id="stats-title">Estadísticas</h2>
+
+      <!-- Resumen en tarjetas: números grandes y legibles de un vistazo -->
+      <div class="stats-grid">
+        <div class="stat-tile">
+          <span class="stat-value" id="stats-total">0</span>
+          <span class="stat-label">Partidas</span>
+        </div>
+        <div class="stat-tile stat-tile-win">
+          <span class="stat-value" id="stats-wins">0</span>
+          <span class="stat-label">Victorias</span>
+          <span class="stat-sub">vs IA</span>
+        </div>
+        <div class="stat-tile stat-tile-loss">
+          <span class="stat-value" id="stats-losses">0</span>
+          <span class="stat-label">Derrotas</span>
+          <span class="stat-sub">vs IA</span>
+        </div>
+        <div class="stat-tile">
+          <span class="stat-value" id="stats-time">0 s</span>
+          <span class="stat-label">Tiempo</span>
+        </div>
       </div>
-      <div class="stats-group">
-        <h3>👥 2 jugadores</h3>
-        <p id="stats-pvp-line" class="stats-row"></p>
-        <p id="stats-pvp-percent" class="stats-row"></p>
+
+      <div class="stats-best-card">
+        <span class="stat-label">Mejor resultado</span>
+        <span class="stat-value" id="stats-best-line">—</span>
       </div>
-      <button id="stats-close" class="button" type="button">Cerrar</button>
+
+      <!-- Contra la IA: barra de porcentaje + racha por dificultad -->
+      <div class="stats-group">
+        <h3>Contra la IA</h3>
+        <div class="stat-bar" role="img" aria-label="Porcentaje de victorias contra la IA">
+          <div class="stat-bar-fill" id="stats-ia-bar"></div>
+        </div>
+        <p class="stat-bar-caption" id="stats-ia-line">Tú 0 · IA 0</p>
+        <p class="stat-bar-caption stat-bar-percent" id="stats-ia-percent">Victorias: —</p>
+        <p class="stat-bar-caption">Mejor racha</p>
+        <div class="streak-chips stats-streak">
+          <span class="streak-chip" id="streak-facil">Fácil 0</span>
+          <span class="streak-chip" id="streak-normal">Normal 0</span>
+          <span class="streak-chip" id="streak-dificil">Difícil 0</span>
+        </div>
+      </div>
+
+      <!-- 2 jugadores: barra de porcentaje del jugador 1 -->
+      <div class="stats-group">
+        <h3>2 jugadores</h3>
+        <div class="stat-bar" role="img" aria-label="Porcentaje de victorias del jugador 1">
+          <div class="stat-bar-fill" id="stats-pvp-bar"></div>
+        </div>
+        <p class="stat-bar-caption" id="stats-pvp-line">J1 0 · J2 0</p>
+        <p class="stat-bar-caption stat-bar-percent" id="stats-pvp-percent">Victorias J1: —</p>
+      </div>
+
+      <div class="stats-actions">
+        <button id="stats-reset" class="link-button" type="button">Borrar historial</button>
+        <button id="stats-close" class="button" type="button">Cerrar</button>
+      </div>
     </div>
   </div>
 
   <div id="controls-modal" class="stats-modal hidden">
     <div class="stats-panel controls-panel" role="dialog" aria-modal="true" aria-labelledby="controls-title">
-      <h2 id="controls-title">🎮 Controles</h2>
+      <h2 id="controls-title">Controles</h2>
       <div class="stats-group">
-        <h3>⌨️ Teclado</h3>
+        <h3>Teclado</h3>
         <p class="stats-row"><kbd>W</kbd> / <kbd>S</kbd> — pala izquierda (subir / bajar)</p>
         <p class="stats-row"><kbd>↑</kbd> / <kbd>↓</kbd> — pala derecha (subir / bajar)</p>
         <p class="stats-row"><kbd>ESPACIO</kbd> — empezar / reiniciar</p>
         <p class="stats-row"><kbd>P</kbd> — pausar</p>
         <p class="stats-row"><kbd>ESC</kbd> — volver al menú</p>
-        <p class="stats-row"><kbd>F</kbd> — pantalla completa</p>
         <p class="stats-row"><kbd>M</kbd> — silenciar / restaurar sonido</p>
       </div>
       <div class="stats-group">
-        <h3>🎮 Mando</h3>
-        <p class="stats-row">Joystick izquierdo o cruceta — mover la pala</p>
-        <p class="stats-row">Start — empezar / reiniciar</p>
-        <p class="stats-row">Select — pausar</p>
-        <p class="stats-row">Cada mando se asigna a una pala en 🎨 Personalizar</p>
-      </div>
-      <div class="stats-group">
-        <h3>📱 Táctil</h3>
+        <h3>Táctil</h3>
         <p class="stats-row">Arrastra por el tablero para mover tu pala</p>
-        <p class="stats-row">⏸ pausa · 🏠 volver al menú</p>
+        <p class="stats-row">Pausa y volver al menú con los botones táctiles</p>
       </div>
       <button id="controls-close" class="button" type="button">Cerrar</button>
     </div>
   </div>
 
+  <div id="sound-modal" class="stats-modal hidden">
+    <div class="stats-panel" role="dialog" aria-modal="true" aria-labelledby="sound-title">
+      <h2 id="sound-title">Sonido</h2>
+      <div class="stats-group">
+        <h3>Volumen</h3>
+        <div class="sound-rows">
+          <div class="volume-row">
+            <span class="volume-row-icon icon icon-note" title="Música" aria-hidden="true"></span>
+            <input id="music-volume" class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen de música">
+            <button id="music-toggle" class="volume-toggle" type="button" aria-pressed="true" title="Encender/apagar la música de fondo">ON</button>
+          </div>
+          <div class="volume-row">
+            <span class="volume-row-icon icon icon-burst" title="Efectos" aria-hidden="true"></span>
+            <input id="effects-volume" class="volume-slider" type="range" min="0" max="1" step="0.05" value="1" aria-label="Volumen de efectos">
+          </div>
+        </div>
+      </div>
+      <div class="stats-group">
+        <h3>Tema musical</h3>
+        <div class="theme-selector">
+          <button id="theme-clasico" class="mode-button selected" type="button">Clásico</button>
+          <button id="theme-energetico" class="mode-button" type="button">Energético</button>
+          <button id="theme-tranquilo" class="mode-button" type="button">Tranquilo</button>
+        </div>
+      </div>
+      <button id="sound-close" class="button" type="button">Cerrar</button>
+    </div>
+  </div>
+
   <div id="personalize-modal" class="stats-modal hidden">
     <div class="stats-panel controls-panel" role="dialog" aria-modal="true" aria-labelledby="personalize-title">
-      <h2 id="personalize-title">🎨 Personalizar</h2>
+      <h2 id="personalize-title">Personalizar</h2>
       <div class="stats-group">
         <h3>Color de las palas</h3>
         <div class="color-options">
-          <button class="color-swatch selected" type="button" data-color="#ffffff" title="Por defecto" aria-label="Color por defecto" style="background:#ffffff"></button>
+          <button class="color-swatch selected theme-swatch" type="button" data-color="#ffffff" title="Por defecto (sigue el tema)" aria-label="Color por defecto, sigue el tema"></button>
           <button class="color-swatch" type="button" data-color="#7cfc00" title="Verde" aria-label="Verde" style="background:#7cfc00"></button>
           <button class="color-swatch" type="button" data-color="#00e5ff" title="Cian" aria-label="Cian" style="background:#00e5ff"></button>
           <button class="color-swatch" type="button" data-color="#ff4dd8" title="Rosa" aria-label="Rosa" style="background:#ff4dd8"></button>
@@ -205,59 +255,35 @@
         </div>
       </div>
       <div class="stats-group">
-        <h3>Calidad gráfica</h3>
-        <div class="quality-selector">
-          <span class="selector-label">Resolución</span>
-          <button id="quality-baja" class="mode-button" type="button">Baja</button>
-          <button id="quality-media" class="mode-button" type="button">Media</button>
-          <button id="quality-alta" class="mode-button selected" type="button">Alta</button>
+        <h3>Tema de color</h3>
+        <div class="palette-selector">
+          <button id="palette-verde" class="mode-button selected" type="button">Verde</button>
+          <button id="palette-azul" class="mode-button" type="button">Azul</button>
+          <button id="palette-ambar" class="mode-button" type="button">Ámbar</button>
+          <button id="palette-rosa" class="mode-button" type="button">Rosa</button>
         </div>
       </div>
       <div class="stats-group">
-        <h3>Modo de visualización</h3>
-        <div class="rendering-selector">
-          <button id="rendering-pixelado" class="mode-button selected" type="button">Pixelado</button>
-          <button id="rendering-suave" class="mode-button" type="button">Suave</button>
+        <h3>Tema (claro / oscuro)</h3>
+        <div class="theme-mode-selector">
+          <button id="theme-dark" class="mode-button" type="button">Oscuro</button>
+          <button id="theme-light" class="mode-button" type="button">Claro</button>
+          <button id="theme-system" class="mode-button selected" type="button">Sistema</button>
         </div>
       </div>
       <div class="stats-group">
-        <h3>Efecto CRT</h3>
-        <div class="crt-selector">
-          <button id="crt-on" class="mode-button selected" type="button">Activado</button>
-          <button id="crt-off" class="mode-button" type="button">Desactivado</button>
-        </div>
-      </div>
-      <div class="stats-group">
-        <h3>Tema musical</h3>
-        <div class="theme-selector">
-          <button id="theme-clasico" class="mode-button selected" type="button">Clásico</button>
-          <button id="theme-energetico" class="mode-button" type="button">Energético</button>
-          <button id="theme-tranquilo" class="mode-button" type="button">Tranquilo</button>
-        </div>
-      </div>
-      <div class="stats-group">
-        <h3>Vibración del mando</h3>
-        <div class="vibration-selector">
-          <button id="vibration-on" class="mode-button selected" type="button">Activada</button>
-          <button id="vibration-off" class="mode-button" type="button">Desactivada</button>
-        </div>
-      </div>
-      <div class="stats-group">
-        <h3>Mandos</h3>
-        <div class="gamepad-assign">
-          <button id="assign-left" class="mode-button" type="button">Izquierda: Mando 1</button>
-          <button id="assign-right" class="mode-button" type="button">Derecha: Mando 2</button>
-        </div>
-        <p class="stats-row">Pulsa un botón y luego un botón del mando que quieras usar.</p>
+        <h3>Restablecer</h3>
+        <button id="reset-all-settings" class="reset-all-button" type="button">Restablecer todo</button>
+        <p class="stats-row">Vuelve a los valores por defecto: colores, volúmenes, temas y estadísticas.</p>
       </div>
       <button id="personalize-close" class="button" type="button">Hecho</button>
     </div>
   </div>
 
   <div id="toast" class="toast hidden" role="status"></div>
+  <div id="confetti" class="confetti" aria-hidden="true"></div>
+  <div id="explosion" class="explosion" aria-hidden="true"></div>
 
-  <button id="fill-exit" class="fill-exit hidden" type="button" aria-label="Salir de pantalla completa" title="Salir de pantalla completa">✕</button>
-
-  <script src="script.js"></script>
+  <script src="js/script.js"></script>
 </body>
 </html>

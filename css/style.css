@@ -2318,6 +2318,36 @@ button:focus-visible {
   }
 }
 
+/* --- Retrato en móvil: el menú de inicio se ajusta al ancho de la pantalla
+       para que JUGAR y las dos filas de secundarios no se salgan por los
+       bordes en pantallas estrechas. Las tres columnas se reparten el ancho
+       por igual y el texto encoge para caber sin recortes. --- */
+@media (orientation: portrait) and (hover: none) and (pointer: coarse) {
+  .menu-links {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.35rem;
+  }
+  .menu-links .button {
+    min-width: 0;
+    padding: 0.45rem 0.35rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.04em;
+    text-indent: 0.04em;
+    white-space: nowrap;
+  }
+  /* La fila inferior (Idioma y Acerca de) aún más pequeña */
+  #menu-idioma,
+  #menu-acerca {
+    font-size: 0.62rem;
+    padding: 0.4rem 0.35rem;
+  }
+  /* JUGAR nunca supera el ancho de la pantalla */
+  #menu-main > .button {
+    max-width: 100%;
+  }
+}
+
 /* --- Teléfonos/tablets en horizontal: el tablero se ajusta a la ALTURA
        disponible (en vez de fijarse por el ancho, que lo hacía desbordarse).
        El marcador se convierte en un HUD flotante sobre el tablero para no

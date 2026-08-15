@@ -186,7 +186,7 @@ body {
 
 .title {
   margin: 0 0 1rem;
-  font-size: 3rem;
+  font-size: 3.25rem;
   letter-spacing: 0.15em;
   font-family: var(--font-arcade);
   font-weight: 400; /* la fuente arcade solo tiene peso 400; evita la falsa negrita */
@@ -239,7 +239,7 @@ body {
 
 .score .label {
   font-family: var(--font-arcade);
-  font-size: 0.6rem;
+  font-size: 0.66rem;
   font-weight: 400;
   line-height: 1.4;
   text-transform: uppercase;
@@ -249,7 +249,7 @@ body {
 }
 
 .score .value {
-  font-size: 2.8rem;
+  font-size: 3rem;
   font-weight: 400;
   font-family: var(--font-arcade);
   line-height: 1;
@@ -288,13 +288,13 @@ body {
 .vs {
   position: relative;
   flex: none;
-  width: 54px;
-  height: 54px;
+  width: 58px;
+  height: 58px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-family: var(--font-arcade);
-  font-size: 0.8rem;
+  font-size: 0.85rem;
   letter-spacing: 0.05em;
   color: var(--accent);
   text-shadow: 0 0 8px var(--accent);
@@ -456,6 +456,9 @@ canvas {
   position: absolute;
   inset: 0;
   border-radius: inherit; /* sigue la curvatura del monitor */
+  /* Por encima del marcador y las insignias flotantes (z-index 1..5) para
+     que el menú los cubra por completo y quede limpio y centrado. */
+  z-index: 10;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -482,7 +485,7 @@ canvas {
 
 .overlay-title {
   margin: 0;
-  font-size: 2.5rem;
+  font-size: 2.7rem;
   font-family: var(--font-display);
   font-weight: bold;
   color: var(--accent);
@@ -502,15 +505,15 @@ canvas {
 
 .overlay-subtitle {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   opacity: 0.9;
 }
 
 .button {
   margin-top: 1rem;
-  padding: 0.6rem 1.5rem;
+  padding: 0.68rem 1.7rem;
   font-family: inherit;
-  font-size: 1rem;
+  font-size: 1.08rem;
   letter-spacing: 0.1em;
   text-align: center;
   text-indent: 0.1em; /* compensa el hueco del letter-spacing para centrar el texto */
@@ -589,8 +592,8 @@ canvas {
    sobre las acciones secundarias (Controles / Estadísticas). */
 #menu-main > .button {
   margin-top: 0.25rem;
-  padding: 0.85rem 2.6rem;
-  font-size: 1.3rem;
+  padding: 0.95rem 2.9rem;
+  font-size: 1.45rem;
   font-weight: 700;
   letter-spacing: 0.16em;
   text-indent: 0.16em;
@@ -631,8 +634,80 @@ canvas {
 
 .menu-links .button {
   margin-top: 0;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
+  padding: 0.68rem 1.4rem;
+  font-size: 0.98rem;
+}
+
+/* Iconos de esquina del menú principal (bandera de idioma + "acerca de"):
+   botones pequeños en la parte superior derecha. La bandera se posiciona
+   respecto al overlay (absolute en escritorio, fixed en móvil). */
+.corner-buttons {
+  position: absolute;
+  top: calc(10px + env(safe-area-inset-top));
+  right: calc(10px + env(safe-area-inset-right));
+  display: flex;
+  gap: 8px;
+  z-index: 6;
+}
+.corner-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  padding: 0;
+  margin: 0;
+  font-size: 1.3rem;
+  background: rgba(10, 10, 15, 0.55);
+  border: 1px solid rgba(var(--accent-rgb), 0.45);
+  border-radius: 8px;
+  color: var(--accent);
+  cursor: pointer;
+  transition: transform 0.08s ease;
+}
+.corner-btn:hover {
+  background: rgba(var(--accent-rgb), 0.14);
+  filter: drop-shadow(0 0 5px rgba(var(--accent-rgb), 0.45));
+}
+.corner-btn:active {
+  transform: translateY(1px);
+}
+body.light .corner-btn {
+  background: rgba(255, 255, 255, 0.65);
+}
+
+/* Bandera del idioma: franjas horizontales (ES) o cruz de San Jorge (EN) */
+.flag {
+  display: block;
+  width: 28px;
+  height: 19px;
+  border-radius: 3px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.flag-es {
+  background: linear-gradient(to bottom,
+    #c60b1e 0 33.33%,
+    #ffc400 33.33% 66.66%,
+    #c60b1e 66.66% 100%);
+}
+.flag-en {
+  /* Union Jack (Reino Unido): campo azul, aspa blanca, aspa roja fina
+     y cruz roja de San Jorge encima. Dibujado con capas de gradientes. */
+  background:
+    linear-gradient(to bottom, transparent 42%, #c8102e 42% 58%, transparent 58%),
+    linear-gradient(to right, transparent 42%, #c8102e 42% 58%, transparent 58%),
+    linear-gradient(45deg, transparent 46%, #c8102e 46% 54%, transparent 54%),
+    linear-gradient(-45deg, transparent 46%, #c8102e 46% 54%, transparent 54%),
+    linear-gradient(45deg, transparent 40%, #ffffff 40% 60%, transparent 60%),
+    linear-gradient(-45deg, transparent 40%, #ffffff 40% 60%, transparent 60%),
+    #012169;
+}
+
+/* La bandera dentro de la ayuda de Controles es algo más grande y legible */
+.controls-menu .flag {
+  width: 32px;
+  height: 21px;
 }
 
 /* Fila de acciones de la pantalla de configuración:
@@ -648,14 +723,14 @@ canvas {
 
 .setup-actions .button {
   margin-top: 0;
-  padding: 0.6rem 1.25rem;
-  font-size: 0.9rem;
+  padding: 0.68rem 1.4rem;
+  font-size: 0.98rem;
 }
 
 /* "Empezar" (centro) destaca un poco más que los secundarios */
 .setup-actions .setup-start {
-  padding: 0.7rem 1.6rem;
-  font-size: 1rem;
+  padding: 0.78rem 1.8rem;
+  font-size: 1.1rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -854,6 +929,36 @@ kbd {
   transform: translate(-50%, -50%) rotate(-45deg);
   width: 1.2em;
   height: 0.11em;
+  background: currentColor;
+  border-radius: 1px;
+}
+
+/* Información (acerca de): círculo con una "i" en el centro */
+.icon-info {
+  width: 1em;
+  height: 1em;
+  border: 0.12em solid currentColor;
+  border-radius: 50%;
+}
+.icon-info::before {
+  content: '';
+  position: absolute;
+  top: 0.16em;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.15em;
+  height: 0.15em;
+  background: currentColor;
+  border-radius: 50%;
+}
+.icon-info::after {
+  content: '';
+  position: absolute;
+  top: 0.42em;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0.15em;
+  height: 0.36em;
   background: currentColor;
   border-radius: 1px;
 }
@@ -1161,9 +1266,9 @@ kbd {
 }
 
 .mode-button {
-  padding: 0.5rem 1rem;
+  padding: 0.55rem 1.1rem;
   font-family: inherit;
-  font-size: 0.95rem;
+  font-size: 1.02rem;
   letter-spacing: 0.05em;
   text-align: center;
   text-indent: 0.05em;
@@ -1333,14 +1438,14 @@ button:focus-visible {
   /* En móvil el menú (inicio y configuración) ocupa TODA la pantalla, igual
      que los modales: el tablero en retrato es demasiado bajo para el panel de
      configuración y el contenido se salía. Con pantalla completa siempre cabe.
-     Fondo opaco: cubre el título y el marcador que quedan detrás, para que
-     "Jugador 1 vs IA" no se transparente bajo "Configurar partida". */
+     Fondo translúcido: deja ver el tablero ("estadio") detrás del menú, como
+     en escritorio. */
   .overlay {
     position: fixed;
     inset: 0;
     border-radius: 0;
     padding: 12px;
-    background: #0a0a0f;
+    background: rgba(5, 5, 10, 0.82);
     overflow-x: hidden; /* evita desplazamiento horizontal si algo se sale */
   }
 
@@ -1529,26 +1634,33 @@ button:focus-visible {
     padding-bottom: calc(6px + env(safe-area-inset-bottom));
   }
 
-  /* El marcador flota arriba (como en horizontal) para que se vea también en
-     los menús: en móvil el overlay ocupa toda la pantalla con fondo opaco y
-     taparía un marcador normal. Con position:fixed + z-index queda encima. */
+  /* En vertical el marcador se coloca junto al tablero (en flujo normal),
+     no fijo arriba del todo: así no se desperdicia el hueco entre ambos y
+     el conjunto marcador + tablero + botones queda centrado. */
   body.allow-portrait .scoreboard {
-    position: fixed;
-    top: calc(6px + env(safe-area-inset-top));
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 10;
-    gap: 0.35rem;
-    margin: 0;
-    width: auto;
-    max-width: calc(100vw - 12px);
-    padding: 0.2rem 0.4rem;
-    background: rgba(10, 10, 15, 0.35);
+    /* Por encima del overlay del menú (z-index 10): así "Jugador 1 | VS | IA"
+       sigue visible en el menú vertical, como en escritorio. */
+    position: relative;
+    z-index: 12;
+    width: 100%;
+    max-width: 100%;
+    justify-content: center;
+    flex-wrap: nowrap;
+    gap: 0.3rem;
+    margin: 0 auto 0.5rem;
+    padding: 0.2rem 0.3rem;
+    background: rgba(10, 10, 15, 0.55);
     border-radius: 10px;
   }
 
   body.light.allow-portrait .scoreboard {
-    background: rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  /* Las esquinas (bandera + info) bajan justo debajo del marcador para no
+     solaparse con él en pantallas estrechas. */
+  body.allow-portrait .corner-buttons {
+    top: calc(60px + env(safe-area-inset-top));
   }
 
   /* Las tarjetas de puntuación se ajustan a su contenido (sin flex-grow).
@@ -1559,8 +1671,9 @@ button:focus-visible {
     flex: none;
     width: auto;
     max-width: none;
+    min-width: 0;
     gap: 0.05rem;
-    padding: 0.1rem 0.45rem 0.2rem;
+    padding: 0.1rem 0.35rem 0.2rem;
   }
 
   body.allow-portrait .score .value {
@@ -1589,11 +1702,6 @@ button:focus-visible {
     margin-top: 10px;
   }
 
-  /* El menú a pantalla completa reserva arriba el hueco del marcador flotante
-     para que "Configura la partida" no se superponga con él. */
-  body.allow-portrait .overlay {
-    padding-top: calc(64px + env(safe-area-inset-top));
-  }
 }
 
 /* Aviso temporal (toast) */
@@ -2292,13 +2400,10 @@ button:focus-visible {
   }
 
   /* Menú de inicio en móvil: JUGAR grande arriba (ya centrado por flex) y los
-     secundarios en dos filas: Controles · Estadísticas · Sonido arriba, y
-     debajo Idioma · Acerca de en pequeño. */
+     secundarios (Controles · Estadísticas · Sonido) en una fila. */
   .menu-links {
     display: grid;
-    grid-template-areas:
-      "controles estadisticas sonido"
-      "idioma    .            acerca";
+    grid-template-areas: "controles estadisticas sonido";
     grid-template-columns: repeat(3, auto);
     justify-content: center;
     align-items: center;
@@ -2308,13 +2413,15 @@ button:focus-visible {
   #menu-controles { grid-area: controles; }
   #menu-estadisticas { grid-area: estadisticas; }
   #menu-sonido { grid-area: sonido; }
-  #menu-idioma { grid-area: idioma; }
-  #menu-acerca { grid-area: acerca; }
-  /* La fila inferior (Idioma y Acerca de) va en pequeño */
-  #menu-idioma,
-  #menu-acerca {
-    font-size: 0.72rem;
-    padding: 0.4rem 0.7rem;
+  /* Los botones de esquina: tamaño para el pulgar, icono sin agrandar */
+  .corner-btn {
+    width: 44px;
+    height: 44px;
+    font-size: 1.15rem;
+  }
+  .corner-btn .flag {
+    width: 24px;
+    height: 16px;
   }
 }
 
@@ -2324,27 +2431,22 @@ button:focus-visible {
        por igual y el texto encoge para caber sin recortes. --- */
 @media (orientation: portrait) and (hover: none) and (pointer: coarse) {
   .menu-links {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    width: 100%;
-    gap: 0.35rem;
+    /* Columnas ajustadas al contenido (como en horizontal): sin estirar */
+    gap: 0.3rem;
   }
-  .menu-links .button {
-    min-width: 0;
-    padding: 0.45rem 0.35rem;
-    font-size: 0.7rem;
-    letter-spacing: 0.04em;
-    text-indent: 0.04em;
-    white-space: nowrap;
-  }
-  /* La fila inferior (Idioma y Acerca de) aún más pequeña */
-  #menu-idioma,
-  #menu-acerca {
-    font-size: 0.62rem;
-    padding: 0.4rem 0.35rem;
-  }
-  /* JUGAR nunca supera el ancho de la pantalla */
+  /* JUGAR grande y centrado */
   #menu-main > .button {
     max-width: 100%;
+    padding: 0.75rem 2rem;
+    font-size: 1.25rem;
+  }
+  /* Secundarios un poco más pequeños, como en el resto de versiones */
+  .menu-links .button {
+    padding: 0.5rem 0.5rem;
+    font-size: 0.72rem;
+    letter-spacing: 0.05em;
+    text-indent: 0.05em;
+    white-space: nowrap;
   }
 }
 
@@ -2480,7 +2582,7 @@ button:focus-visible {
     gap: 0.3rem;
     /* El padding lateral respeta el notch en los bordes (iPhone en horizontal) */
     padding: 52px calc(12px + env(safe-area-inset-right)) 12px calc(12px + env(safe-area-inset-left));
-    background: #0a0a0f;
+    background: rgba(5, 5, 10, 0.82);
   }
   .overlay-title {
     font-size: 1.4rem;
@@ -2569,7 +2671,7 @@ body.light .splash-progress {
 }
 
 body.light .overlay {
-  background: rgba(247, 247, 250, 0.92);
+  background: rgba(247, 247, 250, 0.85);
 }
 
 body.light .mode-button,

@@ -79,10 +79,16 @@
             <button id="menu-controles" class="button button-outline" type="button" data-i18n="menu.controls">Controles</button>
             <button id="menu-estadisticas" class="button button-outline" type="button" data-i18n="menu.stats">Estadísticas</button>
             <button id="menu-sonido" class="button button-outline" type="button" data-i18n="menu.sound">Sonido</button>
-            <button id="menu-idioma" class="button button-outline" type="button" data-i18n="menu.language">Idioma</button>
             <button id="install-btn" class="button button-outline hidden" type="button"><span class="btn-label"><span class="icon icon-download" aria-hidden="true"></span><span data-i18n="menu.install">Instalar</span></span></button>
             <button id="menu-actualizar" class="button button-outline hidden" type="button" data-i18n="update.check">Buscar actualizaciones</button>
-            <button id="menu-acerca" class="button button-outline" type="button" data-i18n="about.title">Acerca de</button>
+          </div>
+          <div class="corner-buttons">
+            <button id="menu-idioma" class="corner-btn" type="button" aria-label="Idioma" title="Idioma" data-i18n-aria="menu.language" data-i18n-title="menu.language">
+              <span id="lang-flag" class="flag lang-flag flag-es" aria-hidden="true"></span>
+            </button>
+            <button id="menu-acerca" class="corner-btn" type="button" aria-label="Acerca de" title="Acerca de" data-i18n-aria="about.title" data-i18n-title="about.title">
+              <span class="icon icon-info" aria-hidden="true"></span>
+            </button>
           </div>
         </div>
 
@@ -248,6 +254,19 @@
               <div class="guide-btn"><span class="guide-circle" aria-hidden="true"><span class="icon icon-home"></span></span><span class="guide-label" data-i18n="controls.touchMenu">Menú</span></div>
               <div class="guide-btn"><span class="guide-circle" aria-hidden="true"><span class="icon icon-sound"></span></span><span class="guide-label" data-i18n="controls.touchSound">Sonido</span></div>
             </div>
+          </div>
+        </div>
+      </div>
+      <div class="stats-group controls-menu">
+        <h3 data-i18n="controls.menu">Menú</h3>
+        <div class="ctrl-list">
+          <div class="ctrl-row">
+            <div class="ctrl-icon" aria-hidden="true"><span class="flag lang-flag flag-es"></span></div>
+            <p class="ctrl-action" data-i18n="controls.menuLang">Bandera (arriba a la derecha): cambiar idioma</p>
+          </div>
+          <div class="ctrl-row">
+            <div class="ctrl-icon" aria-hidden="true"><span class="icon icon-info"></span></div>
+            <p class="ctrl-action" data-i18n="controls.menuAbout">Icono "i": información del juego</p>
           </div>
         </div>
       </div>

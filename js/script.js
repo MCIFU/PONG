@@ -153,6 +153,7 @@ const TRANSLATIONS = {
     'controls.touchP2Desc': 'Cada mitad de la pantalla mueve su pala',
     'controls.touchButtons': 'Botones',
     'controls.touchPause': 'Pausa', 'controls.touchRestart': 'Reiniciar', 'controls.touchMenu': 'Menú', 'controls.touchSound': 'Sonido',
+    'controls.menu': 'Menú', 'controls.menuLang': 'Bandera (arriba a la derecha): cambiar idioma', 'controls.menuAbout': 'Icono "i": información del juego',
     'sound.title': 'Sonido', 'sound.volume': 'Volumen', 'sound.music': 'Música', 'sound.effects': 'Efectos',
     'sound.toggleTitle': 'Encender/apagar la música de fondo', 'sound.effectsToggle': 'Encender/apagar los efectos de sonido', 'sound.theme': 'Tema musical',
     'sound.themeClassic': 'Clásico', 'sound.themeEnergy': 'Energético', 'sound.themeRelax': 'Tranquilo',
@@ -224,6 +225,7 @@ const TRANSLATIONS = {
     'controls.touchP2Desc': 'Each half of the screen moves its paddle',
     'controls.touchButtons': 'Buttons',
     'controls.touchPause': 'Pause', 'controls.touchRestart': 'Restart', 'controls.touchMenu': 'Menu', 'controls.touchSound': 'Sound',
+    'controls.menu': 'Menu', 'controls.menuLang': 'Flag (top-right corner): change language', 'controls.menuAbout': '"i" icon: game info',
     'sound.title': 'Sound', 'sound.volume': 'Volume', 'sound.music': 'Music', 'sound.effects': 'Effects',
     'sound.toggleTitle': 'Turn background music on/off', 'sound.effectsToggle': 'Turn sound effects on/off', 'sound.theme': 'Music theme',
     'sound.themeClassic': 'Classic', 'sound.themeEnergy': 'Energetic', 'sound.themeRelax': 'Relaxing',
@@ -299,6 +301,11 @@ function applyLanguage() {
   ['es', 'en'].forEach((code) => {
     const btn = document.getElementById('lang-' + code);
     if (btn) btn.classList.toggle('selected', code === language);
+  });
+
+  // Bandera del idioma: esquina del menú y ayuda de Controles
+  document.querySelectorAll('.lang-flag').forEach((el) => {
+    el.className = 'flag lang-flag flag-' + language;
   });
 
   // Textos generados por JavaScript
@@ -621,6 +628,7 @@ let savedEffectsVolume = 1;   // volumen de efectos antes de silenciar
 let musicEnabled = true;      // ¿está encendida la música de fondo?
 let effectsEnabled = true;    // ¿están encendidos los efectos de sonido?
 let effectsVolumeBeforeOff = 1; // volumen de efectos antes de apagarlos con el botón
+let musicVolumeBeforeOff = 1;   // volumen de música antes de apagarla con el botón
 
 // El navegador solo permite sonido después de una acción del usuario
 // (pulsar una tecla o hacer clic), por eso lo activamos al empezar.
@@ -933,6 +941,81 @@ function playMusicNote(frequency, when, type, level, duration, attack = 0.02, de
   osc.stop(when + duration);
 }
 
+// Música del menú: acompañamiento suave y discreto que suena mientras se navega
+// por los menús (inicio, configuración y resultado). No suena durante la partida,
+// donde entra la música de juego. Volumen más bajo para que no moleste.
+const MENU_MUSIC_GAIN = 0.09;
+
+const MENU_THEME = {
+  step: 0.42,           // tempo lento y tranquilo
+  melodyType: 'sine',   // tono redondo y suave, sin armónicos afilados
+  bassType: 'sine',
+  attack: 0.12,         // entrada lenta, sin clics
+  sustain: 2.2,         // notas largas que se solapan = colchón ambiental
+  // Arpegio suave: Do mayor → La menor → Fa mayor → Sol (cadencia tranquila)
+  melody: [
+    523.25, 0, 659.25, 0, 783.99, 0, 659.25, 0,   // Do Mi Sol Mi
+    440.00, 0, 523.25, 0, 659.25, 0, 523.25, 0,   // La Do Mi Do
+    349.23, 0, 440.00, 0, 523.25, 0, 440.00, 0,   // Fa La Do La
+    392.00, 0, 493.88, 0, 587.33, 0, 493.88, 0    // Sol Si Re Si
+  ],
+  bass: [
+    130.81, 0, 0, 0, 0, 0, 0, 0,   // Do
+    110.00, 0, 0, 0, 0, 0, 0, 0,   // La
+    87.31,  0, 0, 0, 0, 0, 0, 0,   // Fa
+    98.00,  0, 0, 0, 0, 0, 0, 0    // Sol
+  ]
+};
+
+let menuMusicOn = false;   // true mientras suena la música del menú
+let menuMusicGain = null;  // nodo de volumen independiente del de la música de juego
+let menuMusicStep = 0;
+let menuMusicNextTime = 0;
+let menuMusicTimer = null;
+
+function startMenuMusic() {
+  if (!musicEnabled || menuMusicOn) return;
+  ensureAudio();
+  if (!audioCtx) return;
+  stopMusicPreview();
+  menuMusicOn = true;
+  menuMusicGain = audioCtx.createGain();
+  menuMusicGain.gain.value = musicVolume * MENU_MUSIC_GAIN;
+  menuMusicGain.connect(audioCtx.destination);
+  menuMusicNextTime = audioCtx.currentTime + 0.05;
+  menuMusicStep = 0;
+  menuMusicTimer = setInterval(scheduleMenuMusic, 50);
+}
+
+function stopMenuMusic() {
+  if (!menuMusicOn) return;
+  menuMusicOn = false;
+  if (menuMusicTimer) {
+    clearInterval(menuMusicTimer);
+    menuMusicTimer = null;
+  }
+  if (menuMusicGain) {
+    menuMusicGain.disconnect();
+    menuMusicGain = null;
+  }
+}
+
+function scheduleMenuMusic() {
+  if (!menuMusicOn || !audioCtx) return;
+  const stepDuration = MENU_THEME.step;
+  while (menuMusicNextTime < audioCtx.currentTime + 0.2) {
+    scheduleMusicStep(MENU_THEME, menuMusicStep, menuMusicNextTime, stepDuration, 1, menuMusicGain);
+    menuMusicNextTime += stepDuration;
+    menuMusicStep = (menuMusicStep + 1) % MENU_THEME.melody.length;
+  }
+}
+
+// Ajusta en vivo el volumen de la música que esté sonando (juego o menú).
+function updateMusicGains() {
+  if (musicGain) musicGain.gain.value = musicVolume * MUSIC_GAIN;
+  if (menuMusicGain) menuMusicGain.gain.value = musicVolume * MENU_MUSIC_GAIN;
+}
+
 function handleVolumeChange() {
   musicVolume = Number(musicVolumeSlider.value);
   effectsVolume = Number(effectsVolumeSlider.value);
@@ -947,8 +1030,8 @@ function handleVolumeChange() {
   } catch (error) {
     // si el navegador bloquea localStorage, seguimos sin guardar
   }
-  // Ajustamos la música de fondo en tiempo real si está sonando
-  if (musicGain) musicGain.gain.value = musicVolume * MUSIC_GAIN;
+  // Ajustamos la música de fondo (juego o menú) en tiempo real si está sonando
+  updateMusicGains();
 }
 
 // Activa o desactiva la música de fondo y guarda la preferencia
@@ -959,13 +1042,27 @@ function setMusicEnabled(enabled) {
   } catch (error) {
     // si el navegador bloquea localStorage, no guardamos
   }
-  updateMusicToggleBtn();
-  if (enabled) {
-    // Solo arrancamos si estamos en plena partida (si no, lo hará al jugar)
-    if (state === 'playing' && !paused) startBackgroundMusic();
-  } else {
+  if (!enabled) {
+    // Recordamos el volumen actual y lo quitamos por completo:
+    // la barrita se va a la izquierda, igual que con los efectos.
+    musicVolumeBeforeOff = musicVolume;
+    musicVolume = 0;
     stopBackgroundMusic();
+    stopMenuMusic();
+  } else {
+    // Restauramos el volumen que había antes de apagarlo
+    musicVolume = musicVolumeBeforeOff > 0 ? musicVolumeBeforeOff : 1;
+    // Reanudamos la música que corresponda al estado actual
+    if (state === 'playing' && !paused) {
+      startBackgroundMusic();
+    } else {
+      startMenuMusic();
+    }
   }
+  // Sincronizamos el deslizador y el volumen real de la música
+  musicVolumeSlider.value = String(musicVolume);
+  updateMusicGains();
+  updateMusicToggleBtn();
 }
 
 function updateMusicToggleBtn() {
@@ -1095,7 +1192,7 @@ function toggleMute() {
   effectsVolumeSlider.value = String(effectsVolume);
   effectsEnabled = effectsVolume > 0;
   updateEffectsToggleBtn();
-  if (musicGain) musicGain.gain.value = musicVolume * MUSIC_GAIN;
+  updateMusicGains();
   updateSoundButton(); // sincroniza el botón táctil de sonido
   showToast(muted ? t('toast.muted') : t('toast.unmuted'));
 }
@@ -1275,17 +1372,20 @@ function pauseForLostFocus() {
 // Muestra el menú principal (Jugar / Controles / Estadísticas)
 function showMainMenu() {
   state = 'start';
+  document.body.classList.toggle('in-setup', state === 'setup');
   menuMainEl.classList.remove('hidden');
   menuSetupEl.classList.add('hidden');
   restartBtn.classList.add('hidden');
   overlayTitle.classList.add('hidden'); // el título "PONG" grande ya está arriba del marcador
   overlaySubtitle.classList.add('hidden'); // menú principal sin subtítulo
   overlay.classList.remove('hidden');
+  startMenuMusic();
 }
 
 // Muestra la pantalla de configuración de la partida
 function showSetup() {
   state = 'setup';
+  document.body.classList.toggle('in-setup', state === 'setup');
   menuMainEl.classList.add('hidden');
   menuSetupEl.classList.remove('hidden');
   overlayTitle.classList.add('hidden'); // sin título redundante: el "PONG" grande ya está arriba
@@ -1799,6 +1899,7 @@ function formatPlayTime(ms) {
 
 function startGame() {
   ensureAudio();
+  stopMenuMusic();
   startBackgroundMusic();
   score1 = 0;
   score2 = 0;
@@ -1808,6 +1909,7 @@ function startGame() {
   updateScoreboard();
   overlay.classList.add('hidden');
   state = 'playing';
+  document.body.classList.toggle('in-setup', state === 'setup');
   updateDifficultyBadge();
   touchControlsEl.classList.add('in-game'); // botones táctiles solo durante la partida
   touchHintShown = false; // el aviso táctil se muestra en la primera cuenta atrás de cada partida
@@ -1886,8 +1988,10 @@ function spawnGoalExplosion(x, y) {
 
 function endGame() {
   state = 'gameover';
+  document.body.classList.toggle('in-setup', state === 'setup');
   updateDifficultyBadge();
   stopBackgroundMusic();
+  startMenuMusic();
   touchControlsEl.classList.remove('in-game'); // al terminar, ocultamos los botones táctiles
 
   // ¿Quién ha ganado el enfrentamiento? (en modo IA el jugador humano puede estar en cualquier lado)
@@ -2799,6 +2903,7 @@ function unlockAndPlayStartup() {
   startupSoundPlayed = true;
   ensureAudio();
   playStartupSound();
+  startMenuMusic();
 }
 window.addEventListener('pointerdown', unlockAndPlayStartup, { once: true });
 window.addEventListener('keydown', unlockAndPlayStartup, { once: true });

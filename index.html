@@ -81,6 +81,8 @@
             <button id="menu-sonido" class="button button-outline" type="button" data-i18n="menu.sound">Sonido</button>
             <button id="menu-idioma" class="button button-outline" type="button" data-i18n="menu.language">Idioma</button>
             <button id="install-btn" class="button button-outline hidden" type="button"><span class="btn-label"><span class="icon icon-download" aria-hidden="true"></span><span data-i18n="menu.install">Instalar</span></span></button>
+            <button id="menu-actualizar" class="button button-outline hidden" type="button" data-i18n="update.check">Buscar actualizaciones</button>
+            <button id="menu-acerca" class="button button-outline" type="button" data-i18n="about.title">Acerca de</button>
           </div>
         </div>
 
@@ -291,6 +293,16 @@
         <button id="lang-en" class="mode-button" type="button" data-i18n="lang.en">Inglés</button>
       </div>
       <button id="language-close" class="button" type="button" data-i18n="common.close">Cerrar</button>
+    </div>
+  </div>
+
+  <div id="about-modal" class="stats-modal hidden">
+    <div class="stats-panel" role="dialog" aria-modal="true" aria-labelledby="about-title">
+      <h2 id="about-title" data-i18n="about.title">Acerca de</h2>
+      <p class="about-logo" aria-hidden="true">PONG</p>
+      <p id="about-version" class="about-version">Versión 1.0.0</p>
+      <p class="about-desc" data-i18n="about.desc">Pong clásico hecho con HTML, CSS y JavaScript puro. Sin dependencias.</p>
+      <button id="about-close" class="button" type="button" data-i18n="common.close">Cerrar</button>
     </div>
   </div>
 

@@ -1,0 +1,8 @@
+version: 1.0.0
+files:
+  - url: Pong-Setup-1.0.0.exe
+    sha512: hHygUOF1eKiSupUhXdY52kiXHUBz6t9C9+pxzDhyDEgsP5ik9+JRGx38TaHfvNrMl8AqTm4uQiUdjls0E11V3Q==
+    size: 72061847
+path: Pong-Setup-1.0.0.exe
+sha512: hHygUOF1eKiSupUhXdY52kiXHUBz6t9C9+pxzDhyDEgsP5ik9+JRGx38TaHfvNrMl8AqTm4uQiUdjls0E11V3Q==
+releaseDate: '2026-08-15T15:52:30.193Z'

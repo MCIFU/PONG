@@ -190,6 +190,13 @@ function roundCorners(size, rgba, radiusRatio) {
 // Los iconos se escriben en ../assets/icons/ (relativo a la carpeta tools/).
 const ICONS_DIR = path.join(__dirname, '..', 'assets', 'icons');
 
+// Exportamos el dibujo y el codificador PNG para reutilizarlos en otros
+// generadores (generate-ico.js crea el icono .ico para la app de Electron).
+// Los PNG solo se escriben cuando este script se ejecuta directamente
+// (node tools/generate-icons.js); al importarlo desde otro script, no.
+module.exports = { encodePng, drawIcon, roundCorners };
+
+if (require.main === module) {
 const icons = {
   'icon-1024.png': 1024,
   'icon-512.png': 512,
@@ -215,3 +222,4 @@ for (const size of [152, 167, 180, 512]) {
   fs.writeFileSync(path.join(ICONS_DIR, name), png);
   console.log('Creado', name, '(' + png.length + ' bytes)');
 }
+} // require.main === module

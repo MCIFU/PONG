@@ -60,6 +60,10 @@ const menuVolverBtn = document.getElementById('menu-volver');
 const languageModal = document.getElementById('language-modal');
 const languageCloseBtn = document.getElementById('language-close');
 const installBtn = document.getElementById('install-btn');
+const aboutModal = document.getElementById('about-modal');
+const aboutCloseBtn = document.getElementById('about-close');
+const aboutVersionEl = document.getElementById('about-version');
+const menuAcercaBtn = document.getElementById('menu-acerca');
 const personalizeModal = document.getElementById('personalize-modal');
 const personalizeCloseBtn = document.getElementById('personalize-close');
 const resetAllBtn = document.getElementById('reset-all-settings');
@@ -113,6 +117,13 @@ const TRANSLATIONS = {
     'common.player2': 'Jugador 2',
     'menu.play': 'Jugar', 'menu.controls': 'Controles', 'menu.stats': 'Estadísticas', 'menu.sound': 'Sonido',
     'menu.language': 'Idioma', 'menu.install': 'Instalar',
+    'update.check': 'Buscar actualizaciones', 'update.checking': 'Buscando…',
+    'update.upToDate': 'Ya tienes la última versión', 'update.available': 'Nueva versión {v} disponible',
+    'update.downloading': 'Descargando… {p}%',
+    'update.downloaded': 'Actualización lista: se instalará al cerrar',
+    'update.installNow': 'Reiniciar e instalar', 'update.error': 'No se pudo buscar actualizaciones',
+    'about.title': 'Acerca de', 'about.version': 'Versión {v}',
+    'about.desc': 'Pong clásico hecho con HTML, CSS y JavaScript puro. Sin dependencias.',
     'setup.subtitle': 'Configura la partida',
     'setup.modeAi': '1 jugador (vs IA)', 'setup.modePvp': '2 jugadores',
     'setup.difficulty': 'Dificultad', 'setup.easy': 'Fácil', 'setup.normal': 'Normal', 'setup.hard': 'Difícil',
@@ -177,6 +188,13 @@ const TRANSLATIONS = {
     'common.close': 'Close', 'common.player1': 'Player 1', 'common.player2': 'Player 2',
     'menu.play': 'Play', 'menu.controls': 'Controls', 'menu.stats': 'Statistics', 'menu.sound': 'Sound',
     'menu.language': 'Language', 'menu.install': 'Install',
+    'update.check': 'Check for updates', 'update.checking': 'Checking…',
+    'update.upToDate': 'You are up to date', 'update.available': 'New version {v} available',
+    'update.downloading': 'Downloading… {p}%',
+    'update.downloaded': 'Update ready: it will install on quit',
+    'update.installNow': 'Restart and install', 'update.error': 'Could not check for updates',
+    'about.title': 'About', 'about.version': 'Version {v}',
+    'about.desc': 'A classic Pong made with pure HTML, CSS and JavaScript. No dependencies.',
     'setup.subtitle': 'Set up the match',
     'setup.modeAi': '1 player (vs AI)', 'setup.modePvp': '2 players',
     'setup.difficulty': 'Difficulty', 'setup.easy': 'Easy', 'setup.normal': 'Normal', 'setup.hard': 'Hard',
@@ -288,6 +306,8 @@ function applyLanguage() {
   if (typeof updateDifficultyBadge === 'function') updateDifficultyBadge();
   if (typeof updatePauseButton === 'function') updatePauseButton();
   if (typeof updateSoundButton === 'function') updateSoundButton();
+  if (typeof renderUpdateButton === 'function') renderUpdateButton();
+  if (typeof renderAbout === 'function') renderAbout();
   if (typeof difficultyDescEl !== 'undefined' && difficultyDescEl) {
     difficultyDescEl.textContent = t('desc.' + difficulty);
   }
@@ -577,6 +597,10 @@ document.addEventListener('keydown', (event) => {
       closePersonalize();
     } else if (!soundModal.classList.contains('hidden')) {
       closeSound();
+    } else if (!languageModal.classList.contains('hidden')) {
+      closeLanguage();
+    } else if (!aboutModal.classList.contains('hidden')) {
+      closeAbout();
     } else {
       quitToMenu();
     }
@@ -1630,6 +1654,35 @@ function closeLanguage() {
   languageModal.classList.add('hidden');
 }
 
+// --- Acerca de ---
+// Versión por defecto para el navegador (PWA); en la app de escritorio se
+// sustituye por la versión real que reporta el proceso principal de Electron.
+let appVersion = '1.0.0';
+
+function renderAbout() {
+  if (aboutVersionEl) {
+    aboutVersionEl.textContent = t('about.version', { v: appVersion || '—' });
+  }
+}
+
+async function openAbout() {
+  renderAbout();
+  aboutModal.classList.remove('hidden');
+  if (window.pongDesktop && window.pongDesktop.getVersion) {
+    try {
+      const version = await window.pongDesktop.getVersion();
+      if (version) appVersion = version;
+      renderAbout();
+    } catch (error) {
+      // Si falla (p. ej. no es Electron), mostramos la versión por defecto.
+    }
+  }
+}
+
+function closeAbout() {
+  aboutModal.classList.add('hidden');
+}
+
 // Cambia el color de las palas y lo guarda
 function setPaddleColor(color) {
   paddleColor = color;
@@ -2575,6 +2628,11 @@ languageCloseBtn.addEventListener('click', closeLanguage);
 languageModal.addEventListener('click', (event) => {
   if (event.target === languageModal) closeLanguage();
 });
+menuAcercaBtn.addEventListener('click', openAbout);
+aboutCloseBtn.addEventListener('click', closeAbout);
+aboutModal.addEventListener('click', (event) => {
+  if (event.target === aboutModal) closeAbout();
+});
 // Botones de idioma: cambian el idioma y cierran el modal
 ['es', 'en'].forEach((code) => {
   const btn = document.getElementById('lang-' + code);
@@ -2896,6 +2954,80 @@ function startSplashLoading() {
   });
 }
 
+// --- Actualizaciones de la app de escritorio (Electron) ---
+// Solo en la app empaquetada aparece el botón "Buscar actualizaciones" del
+// menú. En el navegador (PWA) no existe window.pongDesktop y queda oculto.
+// El puente electron/preload.js expone checkForUpdates() y onUpdateStatus().
+const updateBtn = document.getElementById('menu-actualizar');
+let updateState = 'idle'; // idle | checking | downloading | up-to-date | available | downloaded | error
+let updateVersion = null;
+let updatePercent = 0;
+
+function renderUpdateButton() {
+  if (!updateBtn) return;
+  let key = 'update.check';
+  let vars = null;
+  if (updateState === 'checking') {
+    key = 'update.checking';
+  } else if (updateState === 'downloading') {
+    key = 'update.downloading';
+    vars = { p: updatePercent };
+  } else if (updateState === 'up-to-date') {
+    key = 'update.upToDate';
+  } else if (updateState === 'available') {
+    key = 'update.available';
+    vars = { v: updateVersion || '' };
+  } else if (updateState === 'downloaded') {
+    key = 'update.installNow';
+  } else if (updateState === 'error') {
+    key = 'update.error';
+  }
+  updateBtn.textContent = t(key, vars);
+  updateBtn.disabled = (updateState === 'checking' || updateState === 'downloading');
+}
+
+function handleUpdateStatus(data) {
+  if (!data || !data.state) return;
+  updateState = data.state;
+  if (data.version) updateVersion = data.version;
+  if (data.percent !== undefined && data.percent !== null) updatePercent = data.percent;
+  renderUpdateButton();
+  // 'downloading' no muestra toast: el porcentaje se ve directamente en el botón.
+  if (data.state === 'available') {
+    showToast(t('update.available', { v: data.version || '' }));
+  } else if (data.state === 'downloaded') {
+    showToast(t('update.downloaded'));
+  } else if (data.state === 'up-to-date') {
+    showToast(t('update.upToDate'));
+  } else if (data.state === 'error') {
+    showToast(t('update.error'));
+  }
+}
+
+// Dentro de Electron (preload presente): mostramos el botón y nos suscribimos
+// a los avisos de estado que reenvía el proceso principal.
+if (window.pongDesktop && window.pongDesktop.checkForUpdates) {
+  updateBtn.classList.remove('hidden');
+  if (window.pongDesktop.onUpdateStatus) {
+    window.pongDesktop.onUpdateStatus(handleUpdateStatus);
+  }
+}
+
+updateBtn.addEventListener('click', () => {
+  if (!window.pongDesktop) return;
+  // Si ya se ha descargado, el clic reinicia e instala.
+  if (updateState === 'downloaded' && window.pongDesktop.quitAndInstall) {
+    window.pongDesktop.quitAndInstall().catch(() => {});
+    return;
+  }
+  if (!window.pongDesktop.checkForUpdates) return;
+  updateState = 'checking';
+  renderUpdateButton();
+  window.pongDesktop.checkForUpdates()
+    .then(handleUpdateStatus)
+    .catch(() => handleUpdateStatus({ state: 'error' }));
+});
+
 // Aplicamos el idioma guardado nada más arrancar (el HTML viene en español por
 // defecto). Va aquí, DESPUÉS de las declaraciones, para no leer variables que
 // aún están en su zona muerta temporal (TDZ).
@@ -2908,7 +3040,10 @@ startSplashLoading();
 splashEl.addEventListener('pointerdown', finishSplashNow, { once: true });
 
 // Registrar el service worker (solo funciona servido por HTTP/HTTPS, no con file://)
-if ('serviceWorker' in navigator) {
+// En la app de escritorio (Electron) lo omitimos: bajo file:// el SW interceptaría
+// las peticiones y devolvería respuestas inválidas, rompiendo la carga del juego.
+const isElectron = navigator.userAgent.indexOf('Electron') !== -1;
+if ('serviceWorker' in navigator && !isElectron) {
   navigator.serviceWorker.register('./sw.js').catch(() => {});
   // En cuanto el SW está activo, le pedimos que precargue en segundo plano
   // cualquier asset que falte, para que la siguiente visita sea instantánea.

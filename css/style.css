@@ -1900,6 +1900,27 @@ button:focus-visible {
   font-size: 0.95rem;
 }
 
+/* --- Modal "Acerca de" --- */
+.about-logo {
+  margin: 0.75rem 0 0.25rem;
+  font-family: var(--font-arcade);
+  font-size: 1.5rem;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  text-shadow: 0 0 12px var(--accent);
+}
+
+.about-version {
+  margin: 0.25rem 0 0.75rem;
+  font-size: 0.95rem;
+}
+
+.about-desc {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
 /* --- Resumen de estadísticas: tarjetas, barras de porcentaje y chips --- */
 
 /* Cuadrícula 2x2 de tarjetas con los números clave */
@@ -2268,6 +2289,32 @@ button:focus-visible {
   .game {
     padding-left: calc(12px + env(safe-area-inset-left));
     padding-right: calc(12px + env(safe-area-inset-right));
+  }
+
+  /* Menú de inicio en móvil: JUGAR grande arriba (ya centrado por flex) y los
+     secundarios en dos filas: Controles · Estadísticas · Sonido arriba, y
+     debajo Idioma · Acerca de en pequeño. */
+  .menu-links {
+    display: grid;
+    grid-template-areas:
+      "controles estadisticas sonido"
+      "idioma    .            acerca";
+    grid-template-columns: repeat(3, auto);
+    justify-content: center;
+    align-items: center;
+    gap: 0.45rem 0.5rem;
+    margin-top: 0.6rem;
+  }
+  #menu-controles { grid-area: controles; }
+  #menu-estadisticas { grid-area: estadisticas; }
+  #menu-sonido { grid-area: sonido; }
+  #menu-idioma { grid-area: idioma; }
+  #menu-acerca { grid-area: acerca; }
+  /* La fila inferior (Idioma y Acerca de) va en pequeño */
+  #menu-idioma,
+  #menu-acerca {
+    font-size: 0.72rem;
+    padding: 0.4rem 0.7rem;
   }
 }
 

@@ -72,6 +72,7 @@ const themeDarkBtn = document.getElementById('theme-dark');
 const themeLightBtn = document.getElementById('theme-light');
 const themeSystemBtn = document.getElementById('theme-system');
 const touchPauseBtn = document.getElementById('touch-pause');
+const touchRestartBtn = document.getElementById('touch-restart');
 const touchMenuBtn = document.getElementById('touch-menu');
 const touchControlsEl = document.getElementById('touch-controls');
 const statsCloseBtn = document.getElementById('stats-close');
@@ -119,7 +120,7 @@ const TRANSLATIONS = {
     'desc.dificil': 'Pala corta. La IA predice la trayectoria y casi no falla.',
     'rotate.hint': 'Gira el móvil a horizontal para jugar mejor',
     'touch.hint': 'Arrastra por el tablero para mover tu pala',
-    'touch.pause': 'Pausa', 'touch.back': 'Volver al menú',
+    'touch.pause': 'Pausa', 'touch.restart': 'Reiniciar partida', 'touch.back': 'Volver al menú',
     'gamepoint': '¡Punto de partido!',
     'stats.title': 'Estadísticas', 'stats.total': 'Partidas', 'stats.wins': 'Victorias', 'stats.losses': 'Derrotas',
     'stats.time': 'Tiempo', 'stats.best': 'Mejor resultado', 'stats.vsIa': 'vs IA', 'stats.againstAi': 'Contra la IA',
@@ -131,7 +132,7 @@ const TRANSLATIONS = {
     'controls.space': 'Empezar / reiniciar', 'controls.pause': 'Pausar', 'controls.esc': 'Volver al menú',
     'controls.mute': 'Silenciar / restaurar sonido', 'controls.touch': 'Táctil',
     'controls.touchDrag': 'Arrastra por el tablero para mover tu pala',
-    'controls.touchBtns': 'Pausa y volver al menú con los botones táctiles',
+    'controls.touchBtns': 'Pausa, reiniciar y volver al menú con los botones táctiles',
     'sound.title': 'Sonido', 'sound.volume': 'Volumen', 'sound.music': 'Música', 'sound.effects': 'Efectos',
     'sound.toggleTitle': 'Encender/apagar la música de fondo', 'sound.effectsToggle': 'Encender/apagar los efectos de sonido', 'sound.theme': 'Tema musical',
     'sound.themeClassic': 'Clásico', 'sound.themeEnergy': 'Energético', 'sound.themeRelax': 'Tranquilo',
@@ -152,6 +153,7 @@ const TRANSLATIONS = {
     'game.result': 'Resultado: {s1} - {s2}', 'game.playAgain': 'Jugar de nuevo', 'game.serve': 'SACA',
     'pause.title': 'PAUSA', 'pause.continue': 'Pulsa P para continuar',
     'pause.restart': 'ESPACIO para reiniciar', 'pause.exit': 'ESC para salir al menú',
+    'pause.touchContinue': 'Pulsa Pausa para continuar', 'pause.touchRestart': 'Pulsa Reiniciar para empezar de nuevo', 'pause.touchExit': 'Pulsa Casa para salir al menú',
     'toast.muted': 'Sonido silenciado (M para restaurar)', 'toast.unmuted': 'Sonido restaurado',
     'toast.reset': 'Ajustes restablecidos', 'toast.installing': '¡Instalando la app…!', 'toast.installed': '¡App instalada!',
     'confirm.resetStats': '¿Borrar el historial de victorias?',
@@ -173,7 +175,7 @@ const TRANSLATIONS = {
     'desc.dificil': 'Short paddle. The AI predicts the trajectory and almost never misses.',
     'rotate.hint': 'Turn your phone sideways for a better experience',
     'touch.hint': 'Drag on the board to move your paddle',
-    'touch.pause': 'Pause', 'touch.back': 'Back to menu',
+    'touch.pause': 'Pause', 'touch.restart': 'Restart match', 'touch.back': 'Back to menu',
     'gamepoint': 'Match point!',
     'stats.title': 'Statistics', 'stats.total': 'Games', 'stats.wins': 'Wins', 'stats.losses': 'Losses',
     'stats.time': 'Time', 'stats.best': 'Best result', 'stats.vsIa': 'vs AI', 'stats.againstAi': 'Against the AI',
@@ -185,7 +187,7 @@ const TRANSLATIONS = {
     'controls.space': 'Start / restart', 'controls.pause': 'Pause', 'controls.esc': 'Back to menu',
     'controls.mute': 'Mute / restore sound', 'controls.touch': 'Touch',
     'controls.touchDrag': 'Drag on the board to move your paddle',
-    'controls.touchBtns': 'Pause and return to menu with the touch buttons',
+    'controls.touchBtns': 'Pause, restart and return to menu with the touch buttons',
     'sound.title': 'Sound', 'sound.volume': 'Volume', 'sound.music': 'Music', 'sound.effects': 'Effects',
     'sound.toggleTitle': 'Turn background music on/off', 'sound.effectsToggle': 'Turn sound effects on/off', 'sound.theme': 'Music theme',
     'sound.themeClassic': 'Classic', 'sound.themeEnergy': 'Energetic', 'sound.themeRelax': 'Relaxing',
@@ -206,6 +208,7 @@ const TRANSLATIONS = {
     'game.result': 'Result: {s1} - {s2}', 'game.playAgain': 'Play again', 'game.serve': 'SERVE',
     'pause.title': 'PAUSE', 'pause.continue': 'Press P to continue',
     'pause.restart': 'SPACE to restart', 'pause.exit': 'ESC to exit to menu',
+    'pause.touchContinue': 'Press Pause to continue', 'pause.touchRestart': 'Press Restart to start over', 'pause.touchExit': 'Press Home for the menu',
     'toast.muted': 'Sound muted (M to restore)', 'toast.unmuted': 'Sound restored',
     'toast.reset': 'Settings reset', 'toast.installing': 'Installing the app…!', 'toast.installed': 'App installed!',
     'confirm.resetStats': 'Delete the win history?',
@@ -341,10 +344,6 @@ const PADDLE_WIDTH = 12;
 const PADDLE_SPEED = 6;        // velocidad de las palas
 const BALL_SIZE = 12;
 const MAX_BALL_SPEED = 11;     // tope de velocidad total (deja margen para que cada golpe acelere)
-// En móvil la bola va algo más lenta (~15%): la pantalla es pequeña y la misma
-// velocidad se percibe mucho más rápida que en el escritorio. El tope máximo
-// (MAX_BALL_SPEED) no cambia, así que los rallies siguen teniendo emoción.
-const MOBILE_BALL_FACTOR = 0.85;
 const TRAIL_LENGTH = 12;       // longitud de la estela de la pelota
 const SHADOW_OFFSET = 2;       // desplazamiento (px lógicos) de la sombra dura de palas y pelota
 const AI_ACCEL = 0.22;         // inercia de la IA: cuánto acelera/frena su velocidad por fotograma
@@ -1692,9 +1691,8 @@ function resetBall() {
 function launchBall() {
   const directionX = serverSide === 'left' ? 1 : -1; // hacia el centro
   const directionY = Math.random() < 0.5 ? -1 : 1; // arriba o abajo
-  const factor = IS_TOUCH_DEVICE ? MOBILE_BALL_FACTOR : 1; // un poco más lenta en móvil
-  ball.vx = directionX * ballSpeed * factor;
-  ball.vy = directionY * ballSpeed * (0.3 + Math.random() * 0.7) * factor;
+  ball.vx = directionX * ballSpeed;
+  ball.vy = directionY * ballSpeed * (0.3 + Math.random() * 0.7);
 
   // No dejamos que el saque supere el tope de velocidad
   const total = Math.hypot(ball.vx, ball.vy);
@@ -1889,11 +1887,10 @@ function bounceOffPaddle(paddle) {
   const maxAngle = Math.PI / 4; // rebote máximo de 45 grados
   const angle = hitPosition * maxAngle;
   // Cada golpe acelera según la dificultad (speedUp), sin superar el tope máximo.
-  // En móvil se aplica el mismo factor de velocidad para que el ritmo baje un poco.
-  const speed = Math.min(
-    Math.hypot(ball.vx, ball.vy) * ballSpeedUp * (IS_TOUCH_DEVICE ? MOBILE_BALL_FACTOR : 1),
-    MAX_BALL_SPEED
-  );
+  // El factor móvil solo se aplica en el SAQUE (launchBall); aquí NO se repite,
+  // porque multiplicar por un factor < 1 junto al speedUp (> 1) frenaría la bola
+  // en cada golpe en vez de acelerarla (0.85 × 1.08 < 1).
+  const speed = Math.min(Math.hypot(ball.vx, ball.vy) * ballSpeedUp, MAX_BALL_SPEED);
   const direction = ball.vx > 0 ? -1 : 1; // rebota hacia el lado contrario
 
   ball.vx = direction * Math.cos(angle) * speed;
@@ -2060,9 +2057,16 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText(t('pause.title'), WIDTH / 2, HEIGHT / 2 - 10);
     ctx.font = '18px ' + DISPLAY_FONT;
-    ctx.fillText(t('pause.continue'), WIDTH / 2, HEIGHT / 2 + 30);
-    ctx.fillText(t('pause.restart'), WIDTH / 2, HEIGHT / 2 + 56);
-    ctx.fillText(t('pause.exit'), WIDTH / 2, HEIGHT / 2 + 82);
+    if (IS_TOUCH_DEVICE) {
+      // En móvil no hay teclado: las instrucciones apuntan a los botones táctiles
+      ctx.fillText(t('pause.touchContinue'), WIDTH / 2, HEIGHT / 2 + 30);
+      ctx.fillText(t('pause.touchRestart'), WIDTH / 2, HEIGHT / 2 + 56);
+      ctx.fillText(t('pause.touchExit'), WIDTH / 2, HEIGHT / 2 + 82);
+    } else {
+      ctx.fillText(t('pause.continue'), WIDTH / 2, HEIGHT / 2 + 30);
+      ctx.fillText(t('pause.restart'), WIDTH / 2, HEIGHT / 2 + 56);
+      ctx.fillText(t('pause.exit'), WIDTH / 2, HEIGHT / 2 + 82);
+    }
   }
 }
 
@@ -2202,6 +2206,10 @@ if (IS_TOUCH_DEVICE) {
 }
 
 touchPauseBtn.addEventListener('click', () => togglePause());
+touchRestartBtn.addEventListener('click', () => {
+  playClick(880); // clic de reinicio (tono distinto a los demás)
+  handleSpace();  // reinicia la partida, igual que ESPACIO
+});
 touchMenuBtn.addEventListener('click', quitToMenu);
 
 // Devuelve qué lado controla un toque según su posición y el modo de juego.

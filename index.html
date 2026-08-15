@@ -114,6 +114,7 @@
 
     <div id="touch-controls" class="touch-controls">
       <button id="touch-pause" class="touch-btn touch-pause" aria-label="Pausa" data-i18n-aria="touch.pause"><span class="icon icon-pause" aria-hidden="true"></span></button>
+      <button id="touch-restart" class="touch-btn" aria-label="Reiniciar partida" data-i18n-aria="touch.restart"><span class="icon icon-restart" aria-hidden="true"></span></button>
       <button id="touch-menu" class="touch-btn" aria-label="Volver al menú" data-i18n-aria="touch.back"><span class="icon icon-home" aria-hidden="true"></span></button>
     </div>
 
@@ -186,7 +187,7 @@
   <div id="controls-modal" class="stats-modal hidden">
     <div class="stats-panel controls-panel" role="dialog" aria-modal="true" aria-labelledby="controls-title">
       <h2 id="controls-title" data-i18n="controls.title">Controles</h2>
-      <div class="stats-group">
+      <div class="stats-group controls-keyboard">
         <h3 data-i18n="controls.keyboard">Teclado</h3>
         <div class="ctrl-list">
           <div class="ctrl-row">
@@ -215,7 +216,7 @@
           </div>
         </div>
       </div>
-      <div class="stats-group">
+      <div class="stats-group controls-touch">
         <h3 data-i18n="controls.touch">Táctil</h3>
         <div class="ctrl-list">
           <div class="ctrl-row">
@@ -223,8 +224,8 @@
             <p class="ctrl-action" data-i18n="controls.touchDrag">Arrastra por el tablero para mover tu pala</p>
           </div>
           <div class="ctrl-row">
-            <div class="ctrl-icon" aria-hidden="true"><span class="icon icon-pause"></span><span class="icon icon-home"></span></div>
-            <p class="ctrl-action" data-i18n="controls.touchBtns">Pausa y volver al menú con los botones táctiles</p>
+            <div class="ctrl-icon" aria-hidden="true"><span class="icon icon-pause"></span><span class="icon icon-restart"></span><span class="icon icon-home"></span></div>
+            <p class="ctrl-action" data-i18n="controls.touchBtns">Pausa, reiniciar y volver al menú con los botones táctiles</p>
           </div>
         </div>
       </div>

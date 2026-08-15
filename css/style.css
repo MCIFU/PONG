@@ -445,9 +445,18 @@ canvas {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* "safe center": centra el menú cuando cabe y, si el contenido es más alto
+     que el contenedor, lo alinea arriba para que se pueda hacer scroll sin
+     perder el principio (el clásico problema del centrado con overflow). */
   justify-content: center;
+  justify-content: safe center;
   gap: 0.5rem;
   background: rgba(5, 5, 10, 0.85);
+  /* Si el contenido no cabe (menú de configuración en móvil), se desplaza
+     dentro del panel en vez de salirse de la pantalla. */
+  overflow-y: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
 }
 
 .overlay.hidden {
@@ -550,6 +559,8 @@ canvas {
   flex-direction: column;
   align-items: center;
   gap: 0.25rem;
+  width: 100%;
+  max-width: 100%;
 }
 
 #menu-main.hidden,
@@ -692,6 +703,29 @@ kbd {
   height: 1em;
   border-left: 0.28em solid currentColor;
   border-right: 0.28em solid currentColor;
+}
+
+/* Reiniciar (flecha circular): círculo con un hueco y una punta de flecha
+   que apunta en el sentido de giro */
+.icon-restart {
+  width: 0.95em;
+  height: 0.95em;
+  border: 0.17em solid currentColor;
+  border-left-color: transparent;
+  border-radius: 50%;
+  transform: rotate(-45deg);
+}
+.icon-restart::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -0.03em;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-top: 0.15em solid transparent;
+  border-bottom: 0.15em solid transparent;
+  border-right: 0.26em solid currentColor;
 }
 
 /* Nota musical */
@@ -839,6 +873,8 @@ kbd {
 /* Selector de modo de juego (en la pantalla de inicio) */
 .mode-selector {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 0.5rem;
   margin-top: 0.25rem;
 }
@@ -1061,6 +1097,46 @@ button:focus-visible {
 @media (hover: none) and (pointer: coarse), (max-width: 700px) {
   .touch-controls.in-game {
     display: flex;
+  }
+
+  /* En móvil el menú (inicio y configuración) ocupa TODA la pantalla, igual
+     que los modales: el tablero en retrato es demasiado bajo para el panel de
+     configuración y el contenido se salía. Con pantalla completa siempre cabe. */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    border-radius: 0;
+    padding: 12px;
+  }
+
+  /* Menú de configuración compacto en pantallas pequeñas: botones y enlaces
+     más ligeros para que el panel sea breve. */
+  #menu-setup {
+    gap: 0.3rem;
+  }
+  #menu-setup .mode-button {
+    min-height: auto;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.78rem;
+  }
+  #menu-setup .link-button {
+    min-height: auto;
+    padding: 0.2rem 0.4rem;
+  }
+  .mode-selector,
+  .difficulty-selector,
+  .side-selector,
+  .bestof-selector {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+  }
+  .difficulty-desc {
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    max-width: 280px;
+    text-align: center;
   }
 }
 
@@ -1573,6 +1649,12 @@ button:focus-visible {
     touch-action: manipulation;
   }
 
+  /* En móvil no hay teclado: el modal de Controles muestra solo los controles
+     táctiles (arrastrar, botones de pausa y casa). */
+  .controls-keyboard {
+    display: none;
+  }
+
   /* Botones más altos, fáciles de acertar con el pulgar */
   .button,
   .mode-button,
@@ -1581,6 +1663,42 @@ button:focus-visible {
   }
   .link-button {
     min-height: 40px;
+  }
+
+  /* Menú de configuración compacto: los selectores envuelven en vez de
+     desbordar, y el texto de ayuda de dificultad se ajusta. */
+  #menu-setup {
+    gap: 0.3rem;
+  }
+  /* Los botones de configuración no necesitan la altura de 44px del menú
+     principal: así todo el panel cabe en el tablero sin scroll. */
+  #menu-setup .mode-button {
+    min-height: auto;
+    padding: 0.38rem 0.7rem;
+    font-size: 0.78rem;
+  }
+  .mode-selector,
+  .difficulty-selector,
+  .side-selector,
+  .bestof-selector {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.35rem;
+    margin-top: 0.2rem;
+  }
+  .difficulty-desc {
+    margin-top: 0.2rem;
+    font-size: 0.72rem;
+    max-width: 280px;
+    text-align: center;
+  }
+  .link-button {
+    margin-top: 0.2rem;
+  }
+  /* Los enlaces de configuración también compactos */
+  #menu-setup .link-button {
+    min-height: auto;
+    padding: 0.2rem 0.4rem;
   }
 
   /* Respeta el notch de iOS en horizontal (no tapar las palas) */

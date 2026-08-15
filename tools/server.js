@@ -59,7 +59,12 @@ const server = http.createServer((req, res) => {
       return;
     }
     const ext = path.extname(filePath).toLowerCase();
-    res.writeHead(200, { 'Content-Type': MIME[ext] || 'application/octet-stream' });
+    // En desarrollo no cacheamos: el navegador debe revalidar cada vez para que
+    // los cambios de CSS/JS se vean al recargar (si no, sirve la versión vieja).
+    res.writeHead(200, {
+      'Content-Type': MIME[ext] || 'application/octet-stream',
+      'Cache-Control': 'no-cache'
+    });
     res.end(data);
   });
 });

@@ -1,0 +1,5 @@
+# Netlify ignora las carpetas que empiezan por punto (.well-known), así que
+# desplegamos el contenido en "well-known" y lo servimos aquí con una
+# reescritura interna (200) para que Google encuentre el assetlinks.json
+# en la ruta exacta .well-known/assetlinks.json
+/.well-known/*  /well-known/:splat  200

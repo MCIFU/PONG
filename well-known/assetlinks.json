@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.netlify.mcifu_pong.twa",
+    "sha256_cert_fingerprints": ["55:E4:2A:1A:31:BB:EE:8B:E8:DE:C7:76:39:26:83:F4:DA:3F:00:1D:1D:BA:38:CF:0B:B9:BD:AA:D4:AC:03:AC"]
+  }
+}]
